@@ -1,0 +1,11 @@
+<!-- 07.28.2022 - Sophia Murphy (Demand Chain)
+    Used in the tasteocracy emails to display the Date Time in the correct format
+    Had issues with the DAY OF WEEK using the GMT of the time, not the correct timezone
+    so the wrong day was displaying -->
+<apex:component access="global" controller="Tasteocracy_EmailComponentController">
+    <apex:attribute name="dtValue" type="datetime" assignTo="{!dateTimeToUse}" required="false" description="Date Time field to display" />
+    <apex:attribute name="dtFormat" type="string" assignTo="{!dateFormatToUse}" required="false" description="Format of the date time field" />
+    <!--<apex:attribute name="strTimezone" type="string" assignTo="{!tzToUse}" required="false" description="CST or PST" />-->
+    <apex:attribute name="strBrand" type="string" assignTo="{!brandToUse}" required="false" description="Plymouth, Livermore, New Jersey, etc" />
+    {!FormattedDatetime}
+</apex:component>

@@ -1,0 +1,63 @@
+<apex:page standardController="Household__c" extensions="HouseholdMergeController" title="Household Merge" id="pgMain">
+<apex:form id="frmMain">
+	<apex:sectionHeader title="Manage Household" subTitle="Merge Household" />
+	<apex:pageMessage summary="This wizard will move all Household Respondents from the SOURCE Household to the TARGET 
+			Household, deleting the SOURCE Household in the process.  Once you complete the steps and 
+			press the 'Merge Source to Target' button in step 4, you cannot cancel or undo this process 
+			in any way."  
+		severity="info" 
+		strength="2" 
+		escape="false"
+	/>
+	<br />
+	<apex:pageBlock id="pbMain" title="Household Merge Wizard">
+		<apex:pageBlockSection title="1. Select Source and Target Households" columns="1" collapsible="false">
+			<apex:inputField value="{!hhcSourceLookup.Household__c}" label="Select Source Household" />
+			<apex:inputField value="{!hhcTargetLookup.Household__c}" label="Select Target Household" />
+			<apex:commandButton value="Lookup Households" action="{!NULL}" rerender="pbMain" />
+		</apex:pageBlockSection>
+		<apex:pageBlockSection title="2. Confirm Source Household" columns="2" collapsible="false">
+			<apex:outputField value="{!householdSource.Name}" />
+			<apex:outputField value="{!householdSource.MailingStreet__c}" />
+			<apex:outputField value="{!householdSource.MailingCity__c}" />
+			<apex:outputField value="{!householdSource.MailingState__c}" />
+			<apex:outputField value="{!householdSource.MailingPostalCode__c}" />
+			<apex:outputField value="{!householdSource.Head_Of_Household__r.Name}" />
+		</apex:pageBlockSection>
+		<br />
+		<apex:pageBlockTable value="{!householdSourceMembers}" var="m">
+			<apex:column headerValue="Respondent">{!m.Contact__r.Name}</apex:column>
+            <apex:column headerValue="Status">{!m.Status__c}</apex:column>
+            <apex:column headerValue="Age">{!m.Contact_Age__c}</apex:column>
+            <!-- <apex:column headerValue="Type">{!m.Role__c}</apex:column> -->
+            <!-- <apex:column headerValue="Relationship to HOH">{!m.Relationship_to_HOH__c}</apex:column> -->
+            <!-- <apex:column headerValue="Responsible Contact">{!m.Guardian__r.Name}</apex:column> -->
+		</apex:pageBlockTable>
+		<apex:pageBlockSection title="3. Confirm Target Household" columns="2" collapsible="false">
+			<apex:outputField value="{!householdTarget.Name}" />
+			<apex:outputField value="{!householdTarget.MailingStreet__c}" />
+			<apex:outputField value="{!householdTarget.MailingCity__c}" />
+			<apex:outputField value="{!householdTarget.MailingState__c}" />
+			<apex:outputField value="{!householdTarget.MailingPostalCode__c}" />
+			<apex:outputField value="{!householdTarget.Head_Of_Household__r.Name}" />
+		</apex:pageBlockSection>
+		<br />
+		<apex:pageBlockTable value="{!householdTargetMembers}" var="m">
+			<apex:column headerValue="Respondent">{!m.Contact__r.Name}</apex:column>
+            <apex:column headerValue="Status">{!m.Status__c}</apex:column>
+            <apex:column headerValue="Age">{!m.Contact_Age__c}</apex:column>
+            <!-- <apex:column headerValue="Type">{!m.Role__c}</apex:column> -->
+            <!-- <apex:column headerValue="Relationship to HOH">{!m.Relationship_to_HOH__c}</apex:column> -->
+            <!-- <apex:column headerValue="Responsible Contact">{!m.Guardian__r.Name}</apex:column> -->
+		</apex:pageBlockTable>
+		<apex:pageBlockSection title="4. Confirm Merge" columns="2" collapsible="false">
+			<apex:outputText value="Are you sure you want to continue with this action?  This action cannot 
+				be cancelled and cannot be undone without manual intervention!" />
+			<apex:commandButton value="Merge Source to Target" 
+				action="{!mergeHouseholds}" 
+				rerender="pbMain" 
+			/>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</apex:form>
+</apex:page>

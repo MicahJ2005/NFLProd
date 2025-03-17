@@ -1,0 +1,3 @@
+<aura:event type="COMPONENT" description="Comunicates the selected object for Lookup Fields">
+    <aura:attribute name="recordByEvent" type="sObject"/>
+</aura:event>

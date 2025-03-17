@@ -1,0 +1,56 @@
+<!--<apex:component controller="ProjectTrackerController">
+    <apex:attribute name="oppowners" type="String[]" assignTo="{!selectedOppOwners}" required="false" description="List of selected Opp Owners" />
+    <apex:outputPanel rendered="{!showTable}">
+    <table border="1">
+        <tr>
+            <th style="padding:5px;width:160px;">Project:</th>
+            <!-- we need a listing of all the projects across the top.
+            milestone names down the left
+            target dates/actual dates - color coded in the middle --
+            <apex:repeat value="{!projectKeySet}" var="projectId">
+                <th style="padding:5px; width:160px;">{!projectIdToProject[projectId]}</th>
+            </apex:repeat>
+        </tr>
+        <tr>
+            <td style="padding:5px;">Opportunity Owner</td>
+            <apex:repeat value="{!projectKeySet}" var="projectId">
+                <td style="padding:5px;">
+                    {!projectIdToOppOwner[projectId].displayText}
+                </td>
+            </apex:repeat>
+        </tr>
+        <tr>
+            <td style="padding:5px;">Project Coordinator</td>
+            <apex:repeat value="{!projectKeySet}" var="projectId">
+                <td style="padding:5px;">
+                    {!projectIdToProjCoord[projectId].displayText}
+                </td>
+            </apex:repeat>
+        </tr>
+        <tr>
+            <td style="padding:5px;">Approval Date (Opp)</td>
+            <apex:repeat value="{!projectKeySet}" var="projectId">
+                <td style="padding:5px;">
+                    <apex:outputText value="{0, date, EEEE, MMMM d','  yyyy}">
+                        <apex:param value="{!projectIdToApprovalDate[projectId].displayDate}" /> 
+                    </apex:outputText>
+                </td>
+            </apex:repeat>
+        </tr>
+    <apex:repeat value="{!milestoneKeySet}" var="milestoneNum">
+        <tr>
+            <td style="padding:5px;">{!milestoneNumToMilestone[milestoneNum]}</td>
+            <apex:repeat value="{!projectKeySet}" var="projectId">
+                <td style="padding:5px;background-color:{!milestoneNumToProjIdToLine[milestoneNum][projectId].color}">
+                    <a href="/{!milestoneNumToProjIdToLine[milestoneNum][projectId].Id}">
+                        <apex:outputText value="{0, date, EEEE, MMMM d','  yyyy}">
+                            <apex:param value="{!milestoneNumToProjIdToLine[milestoneNum][projectId].displayDate}" /> 
+                        </apex:outputText>
+                    </a>
+                </td>
+            </apex:repeat>
+        </tr>
+    </apex:repeat>
+    </table>
+</apex:outputPanel>
+</apex:component>--><apex:component ></apex:component>

@@ -1,0 +1,261 @@
+<!-- <apex:page showHeader="false" sidebar="false" standardStylesheets="false" controller="CheckGeneratorController" action="{!runValtiraChecks}"> -->
+<apex:page controller="CheckGeneratorController" action="{!runValtiraChecks}">
+<apex:sectionHeader title="Food Perspectives Recruiting" subtitle="Check Generator" />
+
+	<apex:pageMessage summary="If you are seeing this message, you are attempting to print checks for a Master Test that have no have 
+		no Sessions with a Check Status of 'Generated'.  Please notify your system administrator for assistance."  
+		severity="error" 
+		strength="2" 
+		escape="false"
+	/>
+
+
+<!-- <head>
+	<style>
+		@font-face {
+			font-family: 'MICR';
+			src: url('{!URLFOR($Resource.MICRWOFF)}') format('woff');
+			src: url('{!URLFOR($Resource.MICRFont)}') format('truetype');
+		}
+
+		body {
+			margin-left: 30px;
+			margin-top: 17px;
+			margin-right: 0px;
+			margin-bottom: 0px;
+			font-family: Arial;
+		}
+
+		@media print {
+		    @page {
+		        size: letter portrait;
+		        margin: 1mm;
+		    }
+		}
+
+		.checkWrapper { }
+
+		.checkSectionTitle {
+			padding-top: 34px;
+			height: 80px;
+		}
+
+		.checkSectionContent {
+			padding-top: 2px;
+			height: 60px;
+			font-size: 8pt;
+		}
+
+		.checkSectionPayee {
+			padding-top: 10px;
+			height: 60px;
+			font-size: 8pt;
+		}
+
+		.checkSectionMICR {
+			padding-top: 10px;
+			height: 60px;
+			font-size: 8pt;
+			/*text-align: center;*/
+			padding-left: 104px;
+			margin-bottom: 21px;
+		}
+
+		.contentFPITitle {
+			padding-top: 5px;
+			font-weight: bolder;
+			font-size: 8pt;
+		}
+
+		.contentFPIAddress {
+			font-size: 6pt;
+		}
+
+		.contentBankTitle {
+			padding-top: 5px;
+			font-weight: bolder;
+			font-size: 8pt;
+			text-align: center;
+		}
+
+		.contentBankAddress {
+			font-size: 6pt;
+			text-align: center;
+		}
+
+		.contentCheckNumber {
+			padding-top: 5px;
+			font-size: 10pt;
+			text-align: right;
+		}
+
+		.tableColCenter {
+			text-align: center;
+			vertical-align: middle;
+		}
+
+		.tableColRight {
+			text-align: right;
+			vertical-align: middle;
+		}
+
+		.micrBlock {
+			font-family: "MICR";
+			font-size: 18pt;
+		}
+
+		.pageBreak {
+			page-break-after:always;
+		}
+
+		.voidWatermark {
+			position:absolute;
+			opacity:0.2;
+			font-size: 100pt;
+			z-index:99;
+			color:#000000;
+			text-align: center;
+			vertical-align: middle;
+			line-height: 90px;
+			width: auto;
+			padding-left: 200px;
+		}
+
+	</style>
+</head>
+	<body>
+
+<apex:repeat value="{!lstChecks}" var="l">
+
+	<div class="checkWrapper">
+		<div class="checkSectionTitle">
+			<div style="float:left; width:70px;">
+				<img src="{!URLFOR($Resource.GraphicAssets,'/logos/fpiLogoSquare.PNG')}" 
+					style="max-width: 70px;max-height: 70px" />
+			</div>
+			<div style="float:left; width: 250px; padding-left: 10px;">
+				<div class="contentFPITitle">Food Perspectives, Inc.<br />
+					A Covance Laboratories, Inc. Company
+				</div>
+				<div class="contentFPIAddress">
+					13755 1st Avenue North, Suite 500<br />
+					Plymouth, MN 55441-5473
+				</div>
+			</div>
+			<div style="float: left; width: 241px;">
+				<div class="contentBankTitle">
+					Wells Fargo Bank, N.A.
+				</div>
+				<div class="contentBankAddress">
+					<br />
+					<br />
+					<br />
+					<span style="font-size: 6pt;">
+						&nbsp;
+					</span>
+				</div>
+			</div>
+			<div style="float: left; width: 125px;">
+				<apex:outputPanel rendered="{!l.tr.Check_Number__c != ''}">
+				<div class="contentCheckNumber">
+					{!l.tr.Check_Number__c}
+				</div>
+				</apex:outputPanel>
+				<apex:outputPanel styleClass="contentCheckNumber" rendered="{!l.tr.Check_Number__c = ''}">
+				<div class="contentCheckNumber">
+					RECEIPT
+				</div>
+				</apex:outputPanel>
+			</div>
+		</div>
+		<apex:outputPanel rendered="{!l.bolDonationReceipt}" styleClass="voidWatermark">VOID</apex:outputPanel>
+		<div class="checkSectionContent">
+			<table border="0" cellpadding="2" cellspacing="0">
+				<tr>
+					<td width="50px">
+						<strong>MEMO</strong>
+					</td>
+					<td width="436px">
+						Study: {!l.tr.Master_Test__r.Project_Number__c} PID: {!l.tr.Respondent__r.PID__c}
+					</td>
+					<td width="100px" class="tableColCenter">
+						<strong>DATE</strong>
+					</td>
+					<td width="100px" class="tableColRight">
+						<strong>AMOUNT</strong>
+					</td>
+				</tr>
+				<tr>
+					<td><br /></td>
+					<td>
+						{!l.strAmountInWords} DOLLARS AND 00/100
+					</td>
+					<td class="tableColCenter">
+						<apex:outputField value="{!l.tr.Check_Printed_Date__c}" />
+					</td>
+					<td class="tableColRight">
+						${!l.decCheckAmount}
+					</td>
+				</tr>
+				<tr>
+					<td colspan="4">
+						<apex:outputPanel rendered="{!NOT(l.bolDonationReceipt)}" style="padding-left:425px; font-size: 10pt;">
+							VOID 180 DAYS AFTER CHECK DATE
+						</apex:outputPanel>
+						<apex:outputPanel rendered="{!l.bolDonationReceipt}" style="padding-left:425px; font-size: 10pt;">
+							THIS IS YOUR DONATION RECEIPT
+						</apex:outputPanel>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div class="checkSectionPayee">
+			<table border="0" cellpadding="2" cellspacing="0">
+				<tr>
+					<td width="50px" valign="top">
+						<strong>PAY</strong>
+					</td>
+					<td width="400px" valign="top">
+						<apex:outputPanel rendered="{!NOT(l.bolDonationReceipt)}">
+							{!l.tr.Respondent__r.Name}<br />
+							{!l.hc.Household__r.MailingStreet__c} {!l.hc.Household__r.MailingStreet2__c}<br />
+							{!l.hc.Household__r.MailingCity__c}, {!l.hc.Household__r.MailingState__c} {!l.hc.Household__r.MailingPostalCode__c}
+						</apex:outputPanel>
+						<apex:outputPanel rendered="{!l.bolDonationReceipt}">
+							{!l.tr.Organization__r.Name} c/o {!l.tr.Respondent__r.Name}
+							{!l.hc.Household__r.MailingStreet__c} {!l.hc.Household__r.MailingStreet2__c}<br />
+							{!l.hc.Household__r.MailingCity__c}, {!l.hc.Household__r.MailingState__c} {!l.hc.Household__r.MailingPostalCode__c}
+						</apex:outputPanel>
+					</td>
+					<td width="175px" class="tableColRight">
+						<apex:image value="{!URLFOR($Resource.GraphicAssets,'/logos/CovanceSig.png')}" 
+							style="max-width: 175px;" 
+							rendered="{!l.tr.Check_Number__c != ''}" />
+						<apex:image value="{!URLFOR($Resource.GraphicAssets,'/logos/thank-you-cursive.jpg')}" 
+							style="max-width: 175px;" 
+							rendered="{!l.tr.Check_Number__c = ''}" />
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div class="checkSectionMICR">
+			<table border="0" cellpadding="2" cellspacing="0">
+				<tr>
+					<td width="686px">
+						<br />
+						<apex:outputPanel rendered="{!NOT(l.bolDonationReceipt)}" styleClass="micrBlock">{!l.strMICRString}</apex:outputPanel>
+						<apex:outputPanel rendered="{!l.bolDonationReceipt}">THIS IS YOUR DONATION RECEIPT</apex:outputPanel>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<apex:outputPanel rendered="{!l.bolNextPage}">
+		<div class="pageBreak" />
+	</apex:outputPanel>
+
+</apex:repeat>
+
+	</body> -->
+</apex:page>

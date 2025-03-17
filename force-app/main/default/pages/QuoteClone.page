@@ -1,0 +1,5 @@
+<apex:page standardController="Quote" extensions="flowQuoteController">
+	<Flow:interview name="CloneQuote" interview="{!ClonedQuote}" finishLocation="{!prFinishLocation}">
+		<apex:param name="QuoteID" value="{!Quote.Id}"/>
+	</Flow:interview>
+</apex:page>

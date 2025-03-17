@@ -1,0 +1,14 @@
+<apex:component access="global">
+    <table width="600">
+        <tr><td width="600">
+            <hr style="border: 2px solid #003882;" />
+            
+                Customer Care is available:<br/>
+                <ul>
+                    <li>By phone at (877)-898-6161</li>
+                    <li>By Live Chat at <a href="www.tasteocracy.com">www.tasteocracy.com</a></li>
+                    <li>By email at <a href="mailto:info@tasteocracy.com">info@tasteocracy.com</a></li>
+                </ul>
+                Customer Care hours are: 7am-7pm (Pacific Standard Time) / 9am-9pm (Central Standard Time) Monday through Friday<br/>
+       </td></tr></table>
+</apex:component>

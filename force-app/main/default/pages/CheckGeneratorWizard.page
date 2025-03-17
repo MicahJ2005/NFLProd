@@ -1,0 +1,249 @@
+<apex:page controller="CheckGeneratorWizardController" title="Check Generation Wizard" tabStyle="Master_Test__c">
+<!-- jQuery libraries -->
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/ui-lightness/jquery-ui-1.8.13.custom.css')}" />
+
+  <style>
+  	.activeTab {background-color: #236FBD; color:white; background-image:none}
+    .inactiveTab { background-color: lightgrey; color:black; background-image:none}
+
+    .tableMetrics {
+      border-width: 1px;
+      border-spacing: 2px;
+      border-style: solid;
+      border-color: gray;
+      border-collapse: collapse;
+      background-color: rgb(250, 240, 230);
+    }
+    .tableMetrics th {
+      border-width: 1px;
+      padding: 4px;
+      border-style: solid;
+      border-color: gray;
+      background-color: white;
+    }
+    .tableMetrics td {
+      border-width: 1px;
+      padding: 4px;
+      border-style: solid;
+      border-color: gray;
+      background-color: white;
+
+    }
+
+    .linkedPair {
+      background-color: #d3d3d3;
+      font-weight: bold;
+      text-align: center;
+    }
+
+  </style>
+
+  <script>
+    j$ = jQuery.noConflict();
+    j$(document).ready(function () {
+      j$("[id$=pbtTasks]").tablesorter();
+
+      j$( "#dialog-modal" ).dialog({
+        autoOpen: false,
+        height: 150,
+        width: 400,
+        modal: true,
+        resizable: false,
+        draggable: false
+      });
+    });
+
+    function statusShow() {
+      j$( "#dialog-modal" ).dialog( "open" );
+    }
+
+    function statusHide() {
+      j$( "#dialog-modal" ).dialog( "close" );
+    }
+
+  </script>
+
+  <apex:form id="frmCheckWizard">
+  <apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+
+    <apex:sectionHeader title="Respondents and Tests" subTitle="Check Generation Wizard" />
+      <apex:pageBlock id="pbHeaderMain" title="Choose a Test">
+        <apex:pageBlockButtons location="bottom">
+          <apex:commandButton id="cmdQuery" value="Query for Respondents" action="{!fillRespondents}" rerender="tpDetails" status="asShowInterstitial" />
+        </apex:pageBlockButtons>
+
+        <apex:pageBlockSection columns="1">
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Choose a Test" />
+            <apex:selectList value="{!idMasterTest}" size="1" multiselect="false">
+              <apex:selectOptions value="{!lstProjects}" />
+              <apex:actionSupport event="onchange" action="{!NULL}" rerender="pbHeaderMain" status="asShowInterstitial" />
+            </apex:selectList>
+          </apex:pageBlockSectionItem>
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Choose a Session" />
+            <apex:selectList value="{!strSession}" size="5" multiselect="true">
+              <apex:selectOptions value="{!lstSessions}" />
+            </apex:selectList>
+          </apex:pageBlockSectionItem>
+        </apex:pageBlockSection>
+       </apex:pageBlock>
+
+    <apex:tabPanel switchType="client" selectedTab="tabRespondents" id="tpDetails" tabClass="activeTab" inactiveTabClass="inactiveTab">
+        <apex:tab label="Respondents" name="tabRespondents" id="tabRespondents">
+        	Sessions = {!strTest}
+				<apex:pageBlock id="pbSessions" title="Review Respondent Data" rendered="{!lstFullSessions.size > 0}">
+					<apex:repeat value="{!lstFullSessions}" var="s">
+						<apex:pageBlockSection columns="2" title="{!s.ses.Name} ({!s.ses.Scheduled_Respondents__c}/{!s.ses.Recruits_Per_Session__c} respondents)">
+							<apex:repeat value="{!$ObjectType.Session__c.FieldSets.Quick_Display}" var="fs">
+	                <apex:outputfield value="{!s.ses[fs]}" />
+	            </apex:repeat>
+				    </apex:pageBlockSection>
+				    <apex:pageBlockSection columns="1">
+              <apex:outputText style="font-weight: bold;" value="This session has already been printed!" rendered="{!s.bolLocked}" />
+							<apex:pageBlockTable value="{!s.lstTR}" var="tr" rendered="{!NOT(s.bolLocked)}">
+								<apex:column headerValue="Status">
+									<apex:outputText value="{!tr.tr.Respondent__r.Status__c}" />
+								</apex:column>
+								<apex:column headerValue="Check Amount">
+                  <apex:outputText rendered="{!tr.tr.Donation_Amount_Per_Event__c = 'No, $0'}" value="${!tr.decCheckAmount}" />
+                  <apex:outputText rendered="{!NOT(tr.tr.Donation_Amount_Per_Event__c = 'No, $0')}" value="${!tr.decCheckAmount} (${!tr.tr.Check_Amount__c})" />
+                </apex:column>
+                <apex:column headerValue="Donation Org">
+                  <apex:outputText value="{!tr.tr.Organization__r.Name}" rendered="{!tr.tr.Donation_Amount_Per_Event__c != 'No, $0'}" />
+                </apex:column>
+								<apex:column value="{!tr.tr.Respondent__r.PID__c}" />
+								<apex:column value="{!tr.tr.Respondent__r.Age__c}" />
+								<apex:column headerValue="Respondent">
+                  <apex:outputLink value="/{!tr.tr.Id}" target="_blank">{!tr.tr.Respondent__r.Name}</apex:outputLink>
+                </apex:column>
+								<apex:column headerValue="Street">
+									<apex:outputText value="{!tr.hc.Household__r.MailingStreet__c}" />
+								</apex:column>
+								<apex:column headerValue="City">
+									<apex:outputText value="{!tr.hc.Household__r.MailingCity__c}" />
+								</apex:column>
+								<apex:column headerValue="State">
+									<apex:outputText value="{!tr.hc.Household__r.MailingState__c}" />
+								</apex:column>
+								<apex:column headerValue="Zip">
+									<apex:outputText value="{!tr.hc.Household__r.MailingPostalCode__c}" />
+								</apex:column>
+							</apex:pageBlockTable>
+						</apex:pageBlockSection>
+					</apex:repeat>
+				</apex:pageBlock>
+        </apex:tab>
+        <apex:tab label="Options" name="tabOptions" id="tabOptions">
+        	<apex:outputPanel id="opOptions">
+				<apex:pageBlock id="pbOptions" title="Generation Options" rendered="{!lstFullSessions.size > 0}">
+					<apex:pageBlockButtons location="Top">
+        	</apex:pageBlockButtons>
+					<apex:pageBlockSection columns="1" id="pbsDotChecks" title="Gap Checks">
+            <apex:pageBlockSectionItem >
+              <apex:outputLabel value="Organize Checks by" />
+              <apex:selectList value="{!clsDotOptions.intCheckSort}" size="1" multiselect="false">
+                <apex:selectOptions value="{!clsDotOptions.lstCheckSort}" />
+              </apex:selectList>
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockSectionItem >
+              <apex:outputLabel value="Check Date" />
+              <apex:inputField value="{!tskOptions.ActivityDate}" />
+            </apex:pageBlockSectionItem>
+            <apex:pageBlockTable value="{!lstFullSessions}" var="s">
+              <apex:column headerValue="Generate Checks?">
+                <apex:inputCheckbox value="{!s.bolChecked}" rendered="{!NOT(s.bolLocked)}">
+                  <apex:actionSupport event="onchange" action="{!calculateCheckMetrics}" rerender="opGenerate" />
+                </apex:inputCheckbox>
+                <apex:outputText value="{!s.ses.Check_Status__c} {!s.ses.Check_Printed_Date__c}" rendered="{!s.bolLocked}" />
+              </apex:column>
+              <apex:column headerValue="Session">
+                <apex:outputText value="{!s.ses.Name}" />
+              </apex:column>
+              <apex:column value="{!s.ses.Session_Start__c}" />
+              <apex:column value="{!s.ses.Session_End__c}" />
+              <apex:column value="{!s.ses.Check_Amount__c}" />
+              <apex:column value="{!s.ses.Recruits_Per_Session__c}" />
+              <apex:column headerValue="Respondent Checks" rendered="{!NOT(s.bolLocked)}">
+                <apex:outputText value="{!s.lstTR.size}" />
+              </apex:column>
+              <apex:column headerValue="Non-Org Checks" rendered="{!NOT(s.bolLocked)}">
+                <apex:inputText value="{!s.clsChecks.intNonOrgCount}">
+                  <apex:actionSupport event="onkeyup" action="{!calculateCheckMetrics}" rerender="opGenerate" />
+                </apex:inputText>
+              </apex:column>
+              <apex:column headerValue="Org Checks" rendered="{!NOT(s.bolLocked)}">
+                <apex:inputText value="{!s.clsChecks.intOrgCount}">
+                  <apex:actionSupport event="onkeyup" action="{!calculateCheckMetrics}" rerender="opGenerate" />
+                </apex:inputText>
+              </apex:column>
+            </apex:pageBlockTable>
+					</apex:pageBlockSection>
+				</apex:pageBlock>
+			</apex:outputPanel>
+        </apex:tab>
+        <apex:tab label="Generate Checks" name="tabGenerate" id="tabGenerate">
+        	<apex:outputPanel id="opGenerate">
+        		<apex:pageBlock id="pbGeneration" title="Check Generation" rendered="{!lstFullSessions.size > 0}">
+        			<apex:pageBlockButtons location="Top">
+        				<apex:commandButton id="cmdGenerate" 
+                                      action="{!prepareChecksForGeneration}" 
+                                      value="Generate Checks" 
+                                      rerender="null" 
+                                      status="asShowInterstitial"
+                                      oncomplete="window.open('/apex/CheckGenerator?id={!idMasterTest}','_blank');" />
+        			</apex:pageBlockButtons>
+        			<apex:pageBlockSection columns="1">
+                <table class="tableMetrics">
+                  <tr>
+                    <th>Respondents Scheduled</th>
+                    <th>Respondents Maximum</th>
+                    <th>Recruitment Gap</th>
+                  </tr>
+                  <tr>
+                    <td>{!clsDotOptions.intMetricsScheduledRespCount}</td>
+                    <td>{!clsDotOptions.intMetricsScheduledRespMaximum}</td>
+                    <td>{!clsDotOptions.intMetricsScheduledRespGap}</td>
+                  </tr>
+                  <tr>
+                    <th>Gap Checks</th>
+                    <th>Other Checks (PSA/DQ)</th>
+                    <th>Total Non-Respondent Checks</th>
+                  </tr>
+                  <tr>
+                    <td>{!clsDotOptions.intMetricsGapChecks}</td>
+                    <td>{!clsDotOptions.intMetricsBlankChecks}</td>
+                    <td>{!clsDotOptions.intMetricsTotalDOTChecks}</td>
+                  </tr>
+                  <tr>
+                    <th>$10 Donation Checks</th>
+                    <th>$0 No Donation Checks</th>
+                    <th>Total Checks to be Generated</th>
+                  </tr>
+                  <tr>
+                    <td>{!clsDotOptions.intMetricsPartialDonations}</td>
+                    <td>{!clsDotOptions.intMetricsNoDonations}</td>
+                    <td>{!clsDotOptions.intTotalChecks}</td>
+                  </tr>
+                </table>
+        			</apex:pageBlockSection>
+        		</apex:pageBlock>
+        	</apex:outputPanel>
+        </apex:tab>
+    </apex:tabPanel>
+  </apex:form>
+
+  <div id="dialog-modal" title="Processing Request">
+    <p align="center">
+      Please wait while the system processes your request!
+      <apex:outputPanel rendered="{!$User.LastName = 'Accounting'}">
+        <br />
+        <br />
+        <img src="{!URLFOR($Resource.GraphicAssets,'/icons/loadingHamster.gif')}" border="0" />
+      </apex:outputPanel>
+    </p>
+  </div>
+</apex:page>

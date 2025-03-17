@@ -1,0 +1,6 @@
+<apex:page standardController="Master_Test__c" extensions="MTRefreshStatsController" action="{!runMe}">
+<apex:form >
+    <apex:pageMessages />
+    <apex:commandButton action="{!returnToMT}" value="Return to Master Test" /> 
+</apex:form>
+</apex:page>

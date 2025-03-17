@@ -1,0 +1,319 @@
+<apex:page controller="MasterTestDashboardController" showHeader="true" sidebar="true" tabStyle="Master_Test__c" readOnly="true">
+
+    <apex:stylesheet value="{!URLFOR($Resource.fullCalendar,'/fullcalendar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/qtip2/jquery.qtip.min.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.WebAssets,'/css/CSSCalendar.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/moment/moment.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.fullCalendar,'/fullcalendar.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/qtip2/jquery.qtip.min.js')}" />
+
+    <style>
+        .divLegend {
+            width: 150px;
+            float: left;
+            padding: 2px;
+            margin: 2px;
+        }
+    </style>
+
+    <script> 
+
+        j$ = jQuery.noConflict();
+
+        j$(document).ready(function() {
+
+            j$("#dteStart").datepicker({  });
+            j$("#dteEnd").datepicker({  });
+
+            j$("#dteStart").val(moment().add('months', -3).format('MM/DD/YYYY'));
+            j$("#dteEnd").val(moment().add('months', 6).format('MM/DD/YYYY'));
+
+            var date = new Date();
+            var d = date.getDate();
+            var m = date.getMonth();
+            var y = date.getFullYear();
+            var arrLegend = [];
+            
+            <apex:repeat value="{!lstLocations}" var="location">
+                var container = j$('#fsLegendLocations');
+                var subContainer = j$('<div class="divLegend" />');
+
+                j$('<input />', {
+                    type : 'checkbox',
+                    id: 'id_{!location.value}',
+                    name: 'name_{!location.value}',
+                    value: '{!location.value}',
+                    class: 'arrLocation',
+                    checked: true
+                })
+                .appendTo(subContainer);
+
+                j$('<label />', {
+                    'for': 'id_{!location.value}', 
+                    text: '{!location.value}'
+                })
+                .appendTo(subContainer);
+
+                j$(subContainer).appendTo(container);
+
+            </apex:repeat>
+            
+            <apex:repeat value="{!lstServiceLines}" var="line">
+                var container = j$('#fsLegendServiceLines');
+                var subContainer = j$('<div class="divLegend" />');
+
+                j$('<input />', {
+                    type : 'checkbox',
+                    id: 'id_{!line.value}',
+                    name: 'name_{!line.value}',
+                    value: '{!line.value}',
+                    class: 'arrServiceLine',
+                    checked: true
+                })
+                .appendTo(subContainer);
+
+                j$('<label />', {
+                    'for': 'id_{!line.value}', 
+                    text: '{!line.value}'
+                })
+                .appendTo(subContainer);
+
+                j$(subContainer).appendTo(container);
+            </apex:repeat>
+
+            // Bind to 
+            j$(document).on("change", '.sourceToggle', function() {
+
+                console.log(j$(this).val());
+                console.log(j$(this).is(':checked'));
+
+                Visualforce.remoting.Manager.invokeAction('MasterTestDashboardController.toggleVisibility',
+                    j$(this).val(),
+                    j$(this).is(':checked'),
+                    function(result, event){
+                        if (event.status) {
+                            console.log('All Good, Rerendering');
+                            // j$('#calendar').fullCalendar('rerenderEvents');
+                            location.reload();
+                        }
+                    }, 
+                    {escape: true}
+                );
+
+            });
+
+            j$("#dteStart").change(function() {
+                fillCalendar();
+            });
+            j$("#dteEnd").change(function() {
+                fillCalendar();
+            });
+
+            j$(":checked.arrServiceLine").change(function() {
+                fillCalendar();
+            });
+
+            j$(":checked.arrLocation").change(function() {
+                fillCalendar();
+            });
+
+            j$(".arrServiceLine").change(function() {
+                console.log('SERVICE LINE');
+                console.log(j$(this));
+            });
+
+            j$(".arrLocation").change(function() {
+                console.log('LOCATION');
+                console.log(j$(this));
+            });
+
+            fillCalendar();
+
+        });
+
+        function fillCalendar() {
+
+            // Remove Calendar Element
+            j$("#calWrapper").empty();
+            j$("#calWrapper").append("<div id='calendar' style='margin:1em 0;font-size:13px;float:left;width:100%;'></div>");
+
+            console.log(j$('input:checkbox:checked.arrServiceLine').map(function () { return j$(this).val(); }).get());
+            console.log(j$('input:checkbox:checked.arrLocation').map(function () { return j$(this).val(); }).get());
+
+            j$('#calendar').fullCalendar({
+                timezone: 'America/Chicago',
+                header: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'month,agendaWeek,agendaDay'
+                },
+                weekMode: 'variable',
+                editable: false,
+                eventSources: [
+                    {
+                        // SOURCE N:  DYNAMIC OBJECT
+                        events: function(start, end, callback) {
+
+                            console.log(moment(j$("#dteStart").val()).toISOString());
+                            console.log(moment(j$("#dteStart").val()));
+                            console.log(j$("#dteStart").val());
+
+                            Visualforce.remoting.Manager.invokeAction('MasterTestDashboardController.lstCalendarEvents',
+                                moment(j$("#dteStart").val()).toISOString(),
+                                moment(j$("#dteEnd").val()).toISOString(),
+                                j$('input:checkbox:checked.arrServiceLine').map(function () { return this.value; }).get(), // Service Line
+                                j$('input:checkbox:checked.arrLocation').map(function () { return this.value; }).get(), // Locations
+                                function(result, event){
+                                    if (event.status) {
+                                    
+                                    //console.log(result);
+
+                                        arrLegend = [];
+                                        var arrEvents = [];
+
+                                        // Cycle through all results, format for FullCalendar Event Array
+                                        for (var i = 0; i < result.length; i++) {
+
+                                            arrLegend.push(result[i].strName + '\\|' + result[i].strBGCOLOR + '\\|' + result[i].strCOLOR + '\\|' + result[i].strSourceId + '\\|' + result[i].strChecked + '\\|' + result[i].lstEvents.length);
+
+                                            for(var e = 0; e < result[i].lstEvents.length; e++) {
+
+                                                var r = result[i].lstEvents[e];
+
+                                                console.log(r.dtmStart);
+                                                console.log(r.dtmEnd);
+                                                
+                                                
+                                                r.start = new Date(r.dtmStart);
+                                                //r.start.setHours(r.start.getHours() + 5);
+                                                r.start = moment(r.start).add('minutes', moment(r.start).zone()).toDate();
+                                                r.end = new Date(r.dtmEnd);
+                                                // r.end.setHours(r.end.getHours() + 5);
+                                                r.end = moment(r.end).add('minutes', moment(r.end).zone()).toDate();
+                                                
+                                               //r.start = 1594735200;
+                                               //r.end = 1594742400;
+                                               r.allDay = r.boolAllDay;
+                                                r.id = r.strId;
+                                                r.title = r.strTitle;
+                                                // r.title = r.strTitle.replace("&lt;br&gt;", /\n);
+                                                // r.title = r.strTitle.replace("<br>", /\n);
+                                                r.editable = false;
+                                                // r.color = r.strBGCOLOR;
+                                                // r.textColor = r.strCOLOR;
+                                                r.color = result[i].strBGCOLOR;
+                                                r.textColor = result[i].strCOLOR;
+
+                                                var rData = '';
+                                                for(var d = 0; d < result[i].lstEvents[e].lstData.length; d++) {
+                                                    var detail = result[i].lstEvents[e].lstData[d];
+                                                    var displayValue;
+                                                    if(!isNaN(detail.strData) && moment(detail.strData).isValid() && detail.strData != '' && detail.strData != 'undefined' && detail.strData != null) {
+                                                        displayValue = moment(detail.strData).add('minutes', moment(detail.strData).zone()).toDate();
+                                                        displayValue = moment(displayValue).format('MM/DD/YYYY');
+                                                    } else {
+                                                        displayValue = detail.strData;
+                                                    }
+
+                                                    rData+= '<strong>' + detail.strField + '</strong>:&nbsp;' + displayValue + '<br />';
+                                                }
+
+                                                // Scan for line breaks
+                                                rData = rData.replace("&lt;br&gt;", "<br />");
+                                                r.detailData = rData;
+
+                                                console.log(r);
+
+                                                arrEvents.push(r);
+                                            }
+
+                                        }
+
+                                        // Add Event Sources to the LEGEN...wait for it...DARY.
+                                        j$('#fsLegend').empty();
+                                        j$('#fsLegend').append('<legend>Calendar Legend</legend>');
+                                        for(var i = 0; i < arrLegend.length; i++) {
+                                            arrSource = arrLegend[i].split('\\|');
+                                            j$('#fsLegend').append('<div class=\"divLegend\" style=\"background-color: ' + arrSource[1] + ';color: ' + arrSource[2] + '\"><input class=\"sourceToggle\" type=\"checkbox\" value=\"' + arrSource[3] + '\" ' + arrSource[4] + ' >&nbsp;' + arrSource[0] + ' (' + arrSource[5] + ')<div>');
+                                        }
+                                        
+                                        console.log('Sending JSRemoting result to fullCalendar');
+
+                                        // Send JSRemoting result to FullCalendar
+                                        callback(arrEvents);
+                                    }
+                                }, 
+                                {escape: true}
+                            );
+                        }
+                    }
+                ],
+                eventRender: function(event, element) {
+                    element.qtip({
+                        // content: event.title,
+                        content: event.detailData,
+                        position: { target: 'mouse', adjust: { mouse: false } }
+                    });
+
+                    element.find('.fc-event-title').html(event.title);
+                },
+                eventClick: function(calEvent, jsEvent, view) {
+                    window.open("/" + calEvent.id, "_blank");
+                }
+            });
+            
+        }
+        // });
+
+    </script>
+    
+    <!-- <apex:enhancedList type="Master_Test__c" height="300" rowsPerPage="10" id="AccountList" /> -->
+    <!-- <apex:sectionHeader title="Fielding" subtitle="Event Calendar" /> -->
+
+<!--     <div id='calDates' style='margin:1em .25em; font-size:13px;width: 100%;'>
+        Start Date:  <input type="text" size="10" id="dteStart" />&nbsp;&nbsp;
+        End Date:  <input type="text" size="10" id="dteEnd" />
+    </div> -->
+    
+    <div id='divContainer' width='100%'>
+
+        <div id='calDates' style='margin:1em .25em; font-size:13px;width: 35%; float: left;'>
+            <apex:sectionHeader title="Fielding" subtitle="Event Calendar" />
+            Start Date:  <input type="text" size="10" id="dteStart" />&nbsp;&nbsp;
+            End Date:  <input type="text" size="10" id="dteEnd" />
+        </div>
+
+        <div style="width: 60%; float: left;">
+    
+            <div id='calLocations' style='margin:1em .25em;font-size:13px; width: 100%;'>
+                <fieldset id="fsLegendLocations" style="padding:2px;">
+                    <legend>Test Locations</legend>
+                    <!-- EMPTY CONTAINER FOR CHECKBOX ARRAY -->
+                </fieldset>
+            </div>
+            
+            <div id='calServiceLines' style='margin:1em .25em;font-size:13px; width: 100%;'>
+                <fieldset id="fsLegendServiceLines" style="padding:2px;">
+                    <legend>CFS Service Lines</legend>
+                    <!-- EMPTY CONTAINER FOR CHECKBOX ARRAY -->
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
+    <div id='calLegend' style='margin:1em 0;font-size:13px;float:left;width:100%;'>
+        <fieldset id="fsLegend" style="padding:2px;">
+            <legend>Calendar Legend</legend>
+        </fieldset>
+    </div>
+
+    <div id='calWrapper'>
+        <div id='calendar' style='margin:1em 0;font-size:13px;float:left;width:100%;'></div>
+    </div>
+
+    <div id='divDecode' style='display: hidden;'></div>
+
+</apex:page>

@@ -1,0 +1,54 @@
+<apex:page showHeader="true" sidebar="true" standardController="Master_Test__c" extensions="TestExcludedProjectsController">
+<apex:form id="frmMain">
+	<apex:sectionHeader title="Master Test" subtitle="Specify Projects" />
+	<apex:pageMessages id="pmMain" />
+	<apex:pageBlock title="Choose the projects you wish to include/exclude">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton id="btnSave" value="Save Projects" action="{!saveExcludedProjects}" rerender="frmMain" />
+			<apex:commandButton id="btnCancel" value="Cancel" action="{!cancel}" />
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection title="Selected Projects" columns="1">
+			<apex:pageBlockTable value="{!lstExcludedProjects}" var="proj">
+				<apex:column headerValue="Remove" width="50">
+						<apex:inputCheckbox value="{!proj.bolChecked}" />
+					</apex:column>
+					<apex:column headerValue="Project Number">
+						<apex:outputField value="{!proj.mtProject.Project_Number__c}" />
+					</apex:column>
+					<apex:column headerValue="Project Description">
+						<apex:outputField value="{!proj.mtProject.Public_Test_Description__c}" />
+					</apex:column>
+					<apex:column headerValue="First Session Start">
+						<apex:outputField value="{!proj.mtProject.First_Session_Start__c}" />
+					</apex:column>
+					<apex:column headerValue="Last Session End">
+						<apex:outputField value="{!proj.mtProject.Last_Session_Start__c}" />
+					</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+
+		<apex:pageBlockSection title="Available Projects to Include/Exclude" columns="1">
+			<apex:outputPanel >
+				<apex:inputText value="{!strSearch}" />&nbsp;<apex:commandButton value="Search" action="{!fillAvailableProjectList}" rerender="frmMain" />
+			</apex:outputPanel>
+			<apex:pageBlockTable value="{!lstAvailableProjects}" var="proj">
+				<apex:column headerValue="Add to List" width="50">
+					<apex:inputCheckbox value="{!proj.bolChecked}" />
+				</apex:column>
+				<apex:column headerValue="Project Name">
+					<apex:outputField value="{!proj.mtProject.Project_Number__c}" />
+				</apex:column>
+				<apex:column headerValue="Project Description">
+					<apex:outputField value="{!proj.mtProject.Public_Test_Description__c}" />
+				</apex:column>
+				<apex:column headerValue="Project Title">
+					<apex:outputField value="{!proj.mtProject.First_Session_Start__c}" />
+				</apex:column>
+				<apex:column headerValue="Project Start Date">
+					<apex:outputField value="{!proj.mtProject.Last_Session_Start__c}" />
+				</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</apex:form>
+</apex:page>

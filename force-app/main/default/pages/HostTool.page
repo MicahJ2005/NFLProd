@@ -1,0 +1,893 @@
+<!-- 11.17.2023 - Sophia Murphy (Demand Chain)
+    Commented out - no longer in use -->
+<apex:page > <!-- controller="HostToolController" showheader="true" sidebar="false" standardStylesheets="false" tabStyle="Master_Test__c">
+
+  <!-- jQuery libraries 
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/tablesorter.css')}" />
+
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+
+  <style>
+    
+    .dirtyRow {
+      background-color: red !important;
+    }
+
+    .savedRow {
+      background-color: green !important;
+    }
+
+    .showQuota {
+      cursor: pointer;
+    }
+
+    .assignDOT {
+      cursor: pointer;
+    }
+
+    .pairCol {
+      background-color: #544F4F !important;
+    }
+
+    .sortHidden {
+      display: none;
+    }
+
+  </style>
+
+  <script>
+    j$ = jQuery.noConflict();
+    j$(document).ready(function () {
+        j$("[id$=pbtTasksList]").tablesorter();
+
+        j$( "#dialog-modal" ).dialog({
+          autoOpen: false,
+          height: 150,
+          width: 400,
+          modal: true,
+          resizable: false,
+          draggable: false
+        });
+
+        j$( "#dialog-quota" ).dialog({
+          autoOpen: false,
+          height: 400,
+          width: 500,
+          modal: true,
+          resizable: false,
+          draggable: false,
+          buttons: {
+              Close: function() {
+                  j$(this).dialog( "close" );
+              }
+          }
+        });
+
+        j$( "#dialog-dotchecks" ).dialog({
+          autoOpen: false,
+          height: 400,
+          width: 500,
+          modal: true,
+          resizable: false,
+          draggable: false,
+          buttons: {
+              Close: function() {
+                  j$(this).dialog( "close" );
+              }
+          }
+        });
+
+        j$(document).on("change", '.saveOnChange', function() {
+          var elRow = j$(this).closest('tr');
+          saveRespondentRow(elRow, j$(this).attr('data-rid'), j$(this).attr('data-hid'));
+
+          // Pair Logic
+          if(j$(this).hasClass('statusField') && j$(elRow).next('tr.row-details')) {
+            var strStatus = j$(this).val();
+            j$(elRow).nextUntil('tr.row-pairprimary').each(function() {
+              console.log('setting child status');
+              elChildStatusField = j$(this).find('.statusField');
+              j$(elChildStatusField).val(strStatus);
+              j$(elChildStatusField).change();
+            });
+          }
+
+        });
+
+        j$(document).on("click", '.assignDOT', function() {
+
+          console.log(j$(this));
+          var trid = j$(this).attr('data-trid');
+
+          Visualforce.remoting.Manager.invokeAction('HostToolController.listDOTChecksForTest',
+          j$(this).attr('data-testid'),
+            function(result, event){
+
+                elTableBody = j$('#dialog-dotchecks').find('tbody');
+                elTableBody.empty();
+
+                if(result.length == 0) {
+                  strHTML = '<tr>';
+                  strHTML+= '<td colspan=\"3\">There are no more DOT checks generated to assign!</td>';
+                  strHTML+= '</tr>';
+                  elTableBody.append(strHTML);
+                }
+                
+                for(var i = 0; i < result.length; i++) {
+                  strHTML = '<tr>';
+                  strHTML+= '<td><input type=\"button\" class=\"btnAssignDOT\" data-trid=\"' + trid + '\" data-dotid=\"' + result[i].Id + '\" value=\"Assign DOT Check\" /></td>';
+                  strHTML+= '<td>$' + parseFloat(result[i].Check_Amount__c, 10).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,").toString() + '</td>';
+                  strHTML+= '<td>' + result[i].Check_Number__c + '</td>';
+                  strHTML+= '</tr>';
+                  elTableBody.append(strHTML);
+                }
+
+                j$( "#dialog-dotchecks" ).dialog( "open" );
+            }, 
+            {escape: true}
+          );
+        });
+
+        j$(document).on("click", '.btnAssignDOT', function() {
+
+          Visualforce.remoting.Manager.invokeAction('HostToolController.updateTRWithDOTCheck',
+          j$(this).attr('data-dotid'),
+          j$(this).attr('data-trid'),
+            function(result, event){
+              afRefreshQuery();
+              j$( "#dialog-dotchecks" ).dialog("close");
+            }, 
+            {escape: true}
+          );
+          
+
+        });
+
+        j$(document).on("keyup", '.ridField', function() {
+          console.log('Setting previous sortHidden to value of ' + j$(this).val());
+          j$(this).parent().prev('.sortHidden').html(j$(this).val());
+          j$(this).parents("table").trigger("update");
+
+        });
+
+        j$(document).on("click", '.showQuota', function() {
+
+          // Find paragraph in dialog-quota
+          j$('#fsDonation').empty();
+          j$('#fsQuotas').empty();
+          j$('#fsAttributes').empty();
+
+          // Set Donation Information
+          var strHTMLQuotas = '<table><tr><th>Organization</th><th>Amount</th></tr>';
+          strHTMLQuotas+= '<tr><td>' + j$(this).attr('data-organization') + '</td><td>' + j$(this).attr('data-amount') + '</td></tr>';
+          j$('#fsDonation').html(strHTMLQuotas);
+
+
+          // Bring Quota Information in
+          Visualforce.remoting.Manager.invokeAction('HostToolController.respondentQuota',
+          j$(this).attr('data-id'),
+            function(result, event){
+                var strHTMLQuotas = '<table><tr><th>Key</th><th>Value</th></tr>';
+                var strHTMLAttributes = '<table><tr><th>Key</th><th>Value</th></tr>';
+
+                if(result.length == 0) {
+                  strHTMLQuotas+= '<tr><td colSpan=\"2\">No Quota Information Found!</td><tr>';  
+                }
+
+                for(var i = 0; i < result.length; i++) {
+                  if(result[i].key.indexOf('conditions') > -1) {
+                    strValue = result[i].value;
+                    if(strValue == '1') { strValue = 'Qualified'; } else { strValue = 'Did not Qualify'; }
+                    strHTMLQuotas+= '<tr><td>' + result[i].key + '</td><td>' + strValue + '</td></tr>';  
+                  } else {
+                    strHTMLAttributes+= '<tr><td>' + result[i].key + '</td><td>' + result[i].value + '</td></tr>';  
+                  }
+                  
+                }
+                strHTMLQuotas+='</table>';
+                strHTMLAttributes+='</table>';
+                j$('#fsQuotas').html(strHTMLQuotas);
+                j$('#fsAttributes').html(strHTMLAttributes);
+                j$( "#dialog-quota" ).dialog( "open" );
+            }, 
+            {escape: true}
+          );
+
+        });
+
+    });
+
+    function saveRespondentRow(elRow, respondentId, householdId) {
+
+      var bolProceed = true;
+      var bolRIDRequired = false;
+      var arrContact = {};
+      var arrRespondent = {};
+      var arrHousehold = {};
+
+      j$(elRow).find('td:first').removeClass('savedRow');
+      j$(elRow).find('td:first').removeClass('dirtyRow');
+
+      j$(elRow).find(':input').each(function(index,data) {
+        
+        // Store Value
+        var value = j$(this).val();
+
+        // BUSINESS LOGIC:  STATUS FIELD
+        if(j$(this).hasClass('statusField')) { // Check for logic on status change
+          strValRidInput = j$(elRow).find('.ridField');
+          switch(value) {
+            case 'In Progress':
+            case 'Tested':
+              bolRIDRequired = true;
+              if(j$(strValRidInput).val() == '') {
+                alert('You must specify a Respondent Number before you can set this respondent\'s status to \'' + value + '\'');
+                j$(strValRidInput).focus();
+                bolProceed = false;
+              }
+              j$(this).attr('data-oldvalue', j$(this).val());
+              break;
+            case 'Pending':
+              if(j$(this).attr('data-oldvalue') == 'Tested' || j$(this).attr('data-oldvalue') == 'In Progress') {
+                j$(strValRidInput).val('');
+                arrRespondent['Respondent_Number__c'] = '';
+              }
+              break;
+            default:
+              break;
+          }
+        }
+
+        if(!bolProceed) { return; }
+
+        // BUSINESS LOGIC:  RESPONDENT ID FIELD
+        if(j$(this).hasClass('statusField') && bolRIDRequired) { // Check for logic on status change
+          elValRidInput = j$(elRow).find('.ridField');
+          
+          // Ensure no duplicate Respondent number in Test
+          var intRCount = 0;
+          j$(document).find('.ridField').each(function(index,data) {
+            if((j$(this).val()) == j$(elValRidInput).val()) {
+              intRCount++;
+            }
+          });
+
+          if(intRCount > 1) { // It will always be 1 - the loop will find itself.
+            alert('You cannot specify the same Respondent Number twice in the same Master Test!');
+            j$(strValRidInput).focus();
+            bolProceed = false;
+          }
+        }
+
+        if(!bolProceed) { return; }
+
+        // Parse fields into objects
+        switch(j$(this).attr('data-object')) {
+          case 'Contact':
+            arrContact['Id'] = j$(this).attr('data-id');
+            arrContact[j$(this).attr('data-field')] = value;
+            break;
+          case 'Test_Respondent__c':
+            arrRespondent['Id'] = j$(this).attr('data-id');
+            arrRespondent[j$(this).attr('data-field')] = value;
+            break;
+          case 'Household__c':
+            arrHousehold['Id'] = j$(this).attr('data-id');
+            arrHousehold[j$(this).attr('data-field')] = value;
+            break;
+        }
+
+      });
+
+      if(!bolProceed) {
+        j$(elRow).find('td:first').addClass('dirtyRow');
+      } else {
+        // Final Data verification
+        if(arrContact.Id == '') { arrContact = {}; };
+        if(arrRespondent.Id == '') { arrRespondent = {}; };
+        if(arrHousehold.Id == '') { arrHousehold = {}; };
+        console.log(arrContact);
+        console.log(arrRespondent);
+        console.log(arrHousehold);
+
+        //statusShow();
+
+        // Set save flags and send to RemoteAction
+        Visualforce.remoting.Manager.invokeAction('HostToolController.saveRespondent',
+            arrContact,
+            arrRespondent,
+            arrHousehold,
+              function(result, event){
+                  if (event.status) {
+                    console.log('All Good, Marking Saved');
+                    j$(elRow).find('td:first').addClass('savedRow');
+                    afRefreshTracker();
+                  } else {
+                    console.log('ERROR!');
+                    j$(elRow).find('td:first').addClass('dirtyRow');
+                    statusHide();
+                  }
+              }, 
+              {escape: true}
+          );
+      }
+    }
+
+    function statusShow() {
+      j$( "#dialog-modal" ).dialog( "open" );
+    }
+
+    function statusHide() {
+      j$( "#dialog-modal" ).dialog( "close" );
+      j$("[id$=htmlSessionTable]").tablesorter();
+      j$("[id$=htmlListTable]").tablesorter();
+      
+    }
+
+    function checkForEnterPress(e) {
+        if (e.keyCode == 13) {
+          return true;
+        } else {
+          return false;
+        }
+    }
+
+  </script>
+
+  <apex:form id="frmHostTool">
+  <apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+  <apex:actionFunction id="afRefreshTracker" name="afRefreshTracker" action="{!updateTrackerStats}" rerender="pbTracker" />
+  <apex:actionFunction id="afRefreshQuery" name="afRefreshQuery" action="{!fillRespondentList}" rerender="pbRespondents" status="asShowInterstitial" />
+
+    <apex:sectionHeader title="Respondents and Tests" subTitle="Host Tool" />
+      <apex:pageBlock id="pbHeaderMain">
+
+        <apex:pageBlockSection columns="2" title="Choose a Test and Session">
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Choose a Test" />
+            <apex:selectList value="{!idMasterTest}" size="1" multiselect="false">
+              <apex:selectOptions value="{!lstProjects}" />
+              <apex:actionSupport event="onchange" action="{!NULL}" rerender="pbRespondents, pbHeaderMain" status="asShowInterstitial" />
+            </apex:selectList>
+          </apex:pageBlockSectionItem>
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Search for Respondent" />
+            <apex:outputPanel >
+              <apex:inputText value="{!strRespSearch}" />
+              &nbsp;
+              <apex:commandButton id="cmdSearch" value="Search" action="{!fillRespondentList}" rerender="pbRespondents" status="asShowInterstitial" />
+            </apex:outputPanel>
+          </apex:pageBlockSectionItem>
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Choose a Session" />            
+            <apex:selectList value="{!idSession}" size="1" multiselect="false">
+              <apex:selectOptions value="{!lstSessions}" />
+              <apex:actionSupport event="onchange" action="{!fillRespondentList}" rerender="pbRespondents" status="asShowInterstitial" />
+            </apex:selectList>
+          </apex:pageBlockSectionItem>
+          <apex:pageBlockSectionItem >
+            <apex:outputLabel value="Choose your View" />            
+            <apex:selectList value="{!strViewType}" size="1" multiselect="false">
+              <apex:selectOptions value="{!lstViewTypes}" />
+              <apex:actionSupport event="onchange" action="{!fillRespondentList}" rerender="pbRespondents" status="asShowInterstitial" />
+            </apex:selectList>
+            
+          </apex:pageBlockSectionItem>
+        </apex:pageBlockSection>
+      </apex:pageblock>
+
+      <apex:outputPanel id="pbRespondents">
+        <apex:outputPanel rendered="{!idMasterTest != ''}">
+          <apex:pageblock id="pbTracker" title="Progress Tracker">
+            <div id="divStats">
+              <table border="0" cellspacing="0" cellpadding="0" width="100%" class="detailList">
+                <tr class="headerRow">
+                  <apex:repeat value="{!mapStatusCount}" var="fieldKey">
+                  <th class="headerRow" style="text-align: center !important;">{!fieldKey}</th>
+                  </apex:repeat>
+                </tr>
+                <tr class="dataRow">
+                  <apex:repeat value="{!mapStatusCount}" var="fieldKey">
+                  <td class="dataCell" align="center">{!mapStatusCount[fieldKey]}</td>
+                  </apex:repeat>
+                </tr>
+              </table>
+            </div>
+          </apex:pageblock>
+          <apex:pageBlock title="Master Test">
+            <apex:pageBlockSection columns="2">
+              <apex:repeat value="{!$ObjectType.Master_Test__c.FieldSets.HostToolView}" var="fs">
+                  <apex:outputfield value="{!mtFieldSet[fs]}" />
+              </apex:repeat>
+            </apex:pageBlockSection>
+          </apex:pageBlock>
+          <apex:pageBlock title="Respondents">
+            <apex:pageBlockButtons > 
+              <apex:commandButton id="cmdRefresh" value="Refresh Respondents" action="{!fillRespondentList}" rerender="pbRespondents" status="asShowInterstitial" />
+            </apex:pageBlockButtons>
+          <apex:outputPanel rendered="{!IF(strViewType == 'Session View', true, false)}">       
+            <apex:repeat value="{!lstFullSessions}" var="s">
+              <apex:pageBlockSection columns="2" title="{!s.ses.Name} ({!s.lstTR.size}/{!s.ses.Recruits_Per_Session__c} respondents)">
+                <apex:repeat value="{!$ObjectType.Session__c.FieldSets.Quick_Display}" var="fs">
+                    <apex:outputfield value="{!s.ses[fs]}" />
+                </apex:repeat>
+              </apex:pageBlockSection>
+
+                <table id="htmlSessionTable" class="list" border="0" cellspacing="0" cellpadding="0">
+                  <colgroup span="17"></colgroup>
+                  <thead class="rich-table-thead">
+                    <tr class="headerRow">
+                      <th class="headerRow header" scope="col" colspan="1" style="width:10px;">
+                        <div></div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:10px;">
+                        <div></div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:30px;">
+                        <div>Resp #</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:100px;">
+                        <div>Status</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>First Name</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Last Name</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>PID</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Gender</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Age</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Phone</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Street</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Street 2</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:100px;">
+                        <div>City</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:130px;">
+                        <div>State</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:50px;">
+                        <div>Zip</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Org</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Check</div>
+                      </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!s.lstTR}" var="tr">
+                  <tr class="dataRow row-pairprimary" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}" onblur="if (window.hiOff){hiOff(this);}" onfocus="if (window.hiOn){hiOn(this);}">
+                    <td class="dataCell" colspan="1"></td>
+                    <td rowspan="{!tr.intRowSpan}" class="dataCell{!tr.strPairStyle}" colspan="1" style="width:10px;"></td>
+                    <td class="dataCell" colspan="1">
+                      <span class="sortHidden">{!tr.tr.Respondent_Number__c}</span>
+                      <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <input class="saveOnChange ridField" 
+                                      data-field="Respondent_Number__c" 
+                                      data-id="{!tr.tr.Id}" 
+                                      data-object="Test_Respondent__c" 
+                                      value="{!tr.tr.Respondent_Number__c}" 
+                                      size="20" style="width:45px;" type="text" />
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.tr.Tested_Status__c}" styleClass="saveOnChange statusField" 
+                                      html-data-object="Test_Respondent__c" 
+                                      html-data-field="Tested_Status__c" 
+                                      html-data-id="{!tr.tr.Id}"
+                                      html-data-oldvalue="{!tr.tr.Tested_Status__c}"
+                    />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <div class="showQuota" data-id="{!tr.tr.Id}" data-organization="{!tr.tr.Organization__r.Name}" data-amount="{!tr.tr.Donation_Amount_Per_Event__c}">
+                        <a>{!tr.tr.Respondent__r.FirstName}</a>
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <div class="showQuota" data-id="{!tr.tr.Id}" data-organization="{!tr.tr.Organization__r.Name}" data-amount="{!tr.tr.Donation_Amount_Per_Event__c}">
+                        <a>{!tr.tr.Respondent__r.LastName}</a>
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputLink value="/{!tr.tr.Respondent__r.Id}" target="_blank">{!tr.tr.Respondent__r.PID__c}</apex:outputLink>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.tr.Respondent__r.Gender__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Contact"  
+                                      html-data-field="Gender__c" 
+                                      html-data-id="{!tr.tr.Respondent__c}" 
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">{!tr.tr.Respondent__r.Age__c}</td>
+                    <td class="dataCell" colspan="1">{!tr.tr.Respondent__r.IVRPhone__c}</td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingStreet__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingStreet__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingStreet2__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingStreet2__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingCity__c}" style="width:100px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingCity__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingState__c}" style="width:30px;" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingState__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />  
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingPostalCode__c}" style="width:50px;" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingPostalCode__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputText value="Yes" rendered="{!IF(tr.tr.Organization__r.Name = null, false, true)}" />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputPanel styleClass="assignDOT" 
+                                      html-data-testid="{!idMasterTest}" 
+                                      html-data-sessionid="{!tr.trq.Session_Quota__r.Related_Session__c}" 
+                                      html-data-trid="{!tr.tr.Id}"
+                                      rendered="{!tr.tr.Check_Number__c = ''}">
+                        NO CHECK
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!tr.tr.Check_Number__c != ''}">
+                        {!tr.tr.Check_Number__c} / {!tr.tr.Check_Amount__c}
+                      </apex:outputPanel>
+                    </td>
+                  </tr>
+                  <apex:repeat value="{!tr.lstPairs}" var="trp">
+                    <tr class="dataRow row-details expand-child" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}" onblur="if (window.hiOff){hiOff(this);}" onfocus="if (window.hiOn){hiOn(this);}">
+                      <td class="dataCell" colspan="1"></td>
+                      <td class="dataCell" colspan="1">
+                        <span class="sortHidden">{!trp.Respondent_Number__c}</span>
+                          <div class="requiredInput">
+                          <div class="requiredBlock"></div>
+                          <input class="saveOnChange ridField" 
+                                      data-field="Respondent_Number__c" 
+                                      data-id="{!trp.Id}" 
+                                      data-object="Test_Respondent__c" 
+                                      size="20" style="width:45px;" type="text" value="{!trp.Respondent_Number__c}" />
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:inputField value="{!trp.Tested_Status__c}" styleClass="saveOnChange statusField" 
+                                      html-data-object="Test_Respondent__c" 
+                                      html-data-field="Tested_Status__c" 
+                                      html-data-id="{!trp.Id}"
+                                      html-data-oldvalue="{!trp.Tested_Status__c}"
+                        />
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <div class="showQuota" data-id="{!tr.tr.Id}">
+                          <a>{!trp.Respondent__r.FirstName}</a>
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <div class="showQuota" data-id="{!tr.tr.Id}">
+                          <a>{!trp.Respondent__r.LastName}</a>
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:outputLink value="/{!trp.Respondent__r.Id}" target="_blank">{!trp.Respondent__r.PID__c}</apex:outputLink>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:inputField value="{!trp.Respondent__r.Gender__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Contact"  
+                                      html-data-field="Gender__c" 
+                                      html-data-id="{!trp.Respondent__c}" 
+                        />
+                      </td>
+                      <td class="dataCell" colspan="1">{!trp.Respondent__r.Age__c}</td>
+                      <td class="dataCell{!tr.strPairStyle}" colspan="8"><br /></td>
+                    </tr>
+                  </apex:repeat>
+                  </apex:repeat>
+                </tbody>
+              </table>
+            </apex:repeat>
+          </apex:outputPanel>
+
+          <apex:outputPanel rendered="{!IF(strViewType == 'List View', true, false)}">       
+            <apex:repeat value="{!lstFullSessions}" var="s">
+
+              <table id="htmlListTable" class="list" border="0" cellspacing="0" cellpadding="0">
+                  <colgroup span="18"></colgroup>
+                  <thead class="rich-table-thead">
+                    <tr class="headerRow">
+                      <th class="headerRow header" scope="col" colspan="1" style="width:10px;">
+                        <div></div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:10px;">
+                        <div></div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:30px;">
+                        <div>Session</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:30px;">
+                        <div>Resp #</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:100px;">
+                        <div>Status</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>First Name</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Last Name</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>PID</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Gender</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Age</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Phone</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Street</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:150px;">
+                        <div>Street 2</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:100px;">
+                        <div>City</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:130px;">
+                        <div>State</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1" style="width:50px;">
+                        <div>Zip</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Org</div>
+                      </th>
+                      <th class="headerRow header" scope="col" colspan="1">
+                        <div>Check</div>
+                      </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!s.lstTR}" var="tr">
+                  <tr class="dataRow row-pairprimary" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}" onblur="if (window.hiOff){hiOff(this);}" onfocus="if (window.hiOn){hiOn(this);}">
+                    <td class="dataCell" colspan="1"></td>
+                    <td rowspan="{!tr.intRowSpan}" class="dataCell{!tr.strPairStyle}" colspan="1" style="width:10px;"></td>
+                    <td class="dataCell" colspan="1">{!tr.trq.Session_Quota__r.Related_Session__r.Name}</td>
+                    <td class="dataCell" colspan="1">
+                      <span class="sortHidden">{!tr.tr.Respondent_Number__c}</span>
+                      <div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <input class="saveOnChange ridField" 
+                                      data-field="Respondent_Number__c" 
+                                      data-id="{!tr.tr.Id}" 
+                                      data-object="Test_Respondent__c" 
+                                      size="20" 
+                                      style="width:45px;" type="text" 
+                                      value="{!tr.tr.Respondent_Number__c}" />
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.tr.Tested_Status__c}" styleClass="saveOnChange statusField" 
+                                      html-data-object="Test_Respondent__c" 
+                                      html-data-field="Tested_Status__c" 
+                                      html-data-id="{!tr.tr.Id}"
+                                      html-data-oldvalue="{!tr.tr.Tested_Status__c}"
+                    />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <div class="showQuota" data-id="{!tr.tr.Id}" data-organization="{!tr.tr.Organization__r.Name}" data-amount="{!tr.tr.Donation_Amount_Per_Event__c}">
+                        <a>{!tr.tr.Respondent__r.FirstName}</a>
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <div class="showQuota" data-id="{!tr.tr.Id}" data-organization="{!tr.tr.Organization__r.Name}" data-amount="{!tr.tr.Donation_Amount_Per_Event__c}">
+                        <a>{!tr.tr.Respondent__r.LastName}</a>
+                      </div>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputLink value="/{!tr.tr.Respondent__r.Id}" target="_blank">{!tr.tr.Respondent__r.PID__c}</apex:outputLink>
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.tr.Respondent__r.Gender__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Contact"  
+                                      html-data-field="Gender__c" 
+                                      html-data-id="{!tr.tr.Respondent__c}" 
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">{!tr.tr.Respondent__r.Age__c}</td>
+                    <td class="dataCell" colspan="1">{!tr.tr.Respondent__r.IVRPhone__c}</td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingStreet__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingStreet__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingStreet2__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingStreet2__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingCity__c}" style="width:100px" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingCity__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingState__c}" style="width:30px;" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingState__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />  
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:inputField value="{!tr.hc.Household__r.MailingPostalCode__c}" style="width:50px;" styleClass="saveOnChange" 
+                                      html-data-object="Household__c"  
+                                      html-data-field="MailingPostalCode__c" 
+                                      html-data-id="{!tr.hc.Household__c}"
+                      />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputText value="Yes" rendered="{!IF(tr.tr.Organization__r.Name = null, false, true)}" />
+                    </td>
+                    <td class="dataCell" colspan="1">
+                      <apex:outputPanel styleClass="assignDOT" 
+                                      html-data-testid="{!idMasterTest}" 
+                                      html-data-sessionid="{!tr.trq.Session_Quota__r.Related_Session__c}" 
+                                      html-data-trid="{!tr.tr.Id}"
+                                      rendered="{!tr.tr.Check_Number__c = ''}">
+                        NO CHECK
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!tr.tr.Check_Number__c != ''}">
+                        {!tr.tr.Check_Number__c} / {!tr.tr.Check_Amount__c}
+                      </apex:outputPanel>
+                    </td>
+                  </tr>
+                  <apex:repeat value="{!tr.lstPairs}" var="trp">
+                    <tr class="dataRow row-details expand-child" onmouseover="if (window.hiOn){hiOn(this);}" onmouseout="if (window.hiOff){hiOff(this);}" onblur="if (window.hiOff){hiOff(this);}" onfocus="if (window.hiOn){hiOn(this);}">
+                      <td class="dataCell" colspan="1"></td>
+                      <td class="dataCell" colspan="1">{!tr.trq.Session_Quota__r.Related_Session__r.Name}</td>
+                      <td class="dataCell" colspan="1">
+                        <span class="sortHidden">{!trp.Respondent_Number__c}</span>
+                        <div class="requiredInput">
+                          <div class="requiredBlock"></div>
+                          <input class="saveOnChange ridField" 
+                                      data-field="Respondent_Number__c" 
+                                      data-id="{!trp.Id}" 
+                                      data-object="Test_Respondent__c" 
+                                      size="20" style="width:45px;" type="text" value="{!trp.Respondent_Number__c}" />
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:inputField value="{!trp.Tested_Status__c}" styleClass="saveOnChange statusField" 
+                                      html-data-object="Test_Respondent__c" 
+                                      html-data-field="Tested_Status__c" 
+                                      html-data-id="{!trp.Id}"
+                                      html-data-oldvalue="{!trp.Tested_Status__c}"
+                        />
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <div class="showQuota" data-id="{!tr.tr.Id}">
+                          <a>{!trp.Respondent__r.FirstName}</a>
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <div class="showQuota" data-id="{!tr.tr.Id}">
+                          <a>{!trp.Respondent__r.LastName}</a>
+                        </div>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:outputLink value="/{!trp.Respondent__r.Id}" target="_blank">{!trp.Respondent__r.PID__c}</apex:outputLink>
+                      </td>
+                      <td class="dataCell" colspan="1">
+                        <apex:inputField value="{!trp.Respondent__r.Gender__c}" style="width:150px" styleClass="saveOnChange" 
+                                      html-data-object="Contact"  
+                                      html-data-field="Gender__c" 
+                                      html-data-id="{!trp.Respondent__c}" 
+                        />
+                      </td>
+                      <td class="dataCell" colspan="1">{!trp.Respondent__r.Age__c}</td>
+                      <td class="dataCell{!tr.strPairStyle}" colspan="8"><br /></td>
+                    </tr>
+                  </apex:repeat>
+                  </apex:repeat>
+                </tbody>
+              </table>
+
+            </apex:repeat>
+          </apex:outputPanel>
+
+          </apex:pageBlock>
+        </apex:outputPanel>
+      </apex:outputPanel>
+  </apex:form>
+
+  <div id="dialog-modal" title="Processing Request">
+    <p align="center">
+      Please wait while the system processes your request!
+    </p>
+  </div>
+
+  <div id="dialog-quota" title="Respondent Donation/Quota Info">
+    <fieldset>
+      <legend>Donation Information</legend>
+      <div id="fsDonation" />
+    </fieldset>
+    <br />
+    <br />
+    <fieldset>
+      <legend>Quotas</legend>
+      <div id="fsQuotas" />
+    </fieldset>
+    <br />
+    <br />
+    <fieldset>
+      <legend>Answers and Attributes</legend>
+      <div id="fsAttributes" />
+    </fieldset>
+  </div>
+
+  <div id="dialog-dotchecks" title="Assign DOT Check to Respondent">
+    <br />
+    <table id="tblDOTChecks">
+      <thead>
+        <tr>
+          <th>
+            Action
+          </th>
+          <th>
+            Check Amount
+          </th>
+          <th>
+            Check Number
+          </th>
+        </tr>
+      </thead>
+      <tbody />
+    </table>
+  </div>
+-->
+</apex:page>

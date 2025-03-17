@@ -1,0 +1,90 @@
+<!-- Commented out - no longer needed 
+    <apex:page standardController="Task_Queue__c" extensions="ShippingInfo_Controller" showHeader="false" sidebar="false" contentType="application/msWord#Shipping Information.doc">
+	<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    	<head>
+            <title></title>
+            <style>
+                p.MsoFooter, li.MsoFooter, div.MsoFooter
+                {
+                    margin:0in;
+                    margin-bottom:.0001pt;
+                    mso-pagination:widow-orphan;
+                    tab-stops:center 3.0in right 6.0in;
+                    font-size:12.0pt;
+                }
+                
+                @page Section1
+                {
+                    size:8.5in 11.0in; 
+                    margin:.5in .5in .5in .5in ;
+                    mso-header-margin:.5in;
+                    mso-header:h1;
+                    mso-footer: f1; 
+                    mso-footer-margin:.5in;
+                }
+                
+                div.Section1
+                {
+                	page:Section1;
+                }
+                
+                table#hrdftrtbl
+                {
+                	margin:0in 0in 0in 0in;
+                	overflow: hidden;
+                }
+                
+                P, DIV, TD, TH, SPAN
+                {
+                	font-family: Helvetica, Arial;
+                }
+                </style>
+                </head>
+                
+                <body>
+                <div class="Section1">
+                    <!-- start custom content -
+                    <p>
+                        <u><H3>SHIPPING INFORMATION</H3></u>
+                        Project # and Name: {!tskQ.Project_Name__c}<br/>
+                        Date of Delivery: {!tskQ.Delivery_Date__c}<br/>
+                        <table border="1">
+                            <tr>
+                                <th><b>Product Name</b></th>
+                                <th><b>Code #</b></th>
+                                <th><b>Quantity</b></th>
+                            </tr>
+                            <apex:repeat var="p" value="{!tskQ.Tasks}">
+                                <tr>
+                                    <td>{!p.Rotation_Description__c}</td>
+                                    <td>{!p.FPI_Code__c}</td>
+                                    <td>{!p.Expected_Product_Quantity__c}</td>
+                                </tr>
+                            </apex:repeat>
+                        </table>	
+                    	<br/>
+                        <b><u>Delivery Address:</u></b><br/>
+                        {!tskQ.Location__r.Name}<br/>
+                        {!tskQ.Location__r.ShippingStreet}<br/>
+                    	{!tskQ.Location__r.ShippingCity}, {!tskQ.Location__r.ShippingState} {!tskQ.Location__r.ShippingPostalCode}<br/>
+                        {!tskQ.Location__r.Shipping_Information__c}
+                	</p>
+
+                    <!-- end custom content -
+                    <!-- don't update the below - header/footer -
+                    <table id='hrdftrtbl' border='1' cellspacing='0' cellpadding='0'>
+                        <tr><td>
+                            <div style='mso-element:header' id="h1" >
+                                <p class="MsoHeader"><img src="http://www.fpitesters.com/media/image/1/emailheader_20170811.jpg" width="520" /></p>
+                            </div>
+                        </td>
+                        <td>
+                            <div style='mso-element:footer' id="f1">
+                                <p class="MsoFooter"><img src="http://www.fpitesters.com/media/image/1/emailfooter_20170811.jpg" width="520" /></p>
+                            </div>
+                        </td></tr>
+                    </table>
+                </div>
+                
+                </body></html>
+</apex:page>--><apex:page ></apex:page>

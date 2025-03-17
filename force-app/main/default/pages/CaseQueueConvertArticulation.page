@@ -1,0 +1,11 @@
+<apex:page standardController="Task" extensions="CaseQueueLibrary" showHeader="true" sidebar="true" title="Convert CQ Articulation to Contact" action="{!convertToArticulation}">
+	<apex:pageMessages ></apex:pageMessages>
+	<apex:form >
+		<apex:inputHidden value="{!Task.WhatId}" />
+		<apex:inputHidden value="{!Task.WhoId}" />
+		<apex:inputHidden value="{!Task.Final_Articulation_Score__c}" />
+		<apex:inputHidden value="{!Task.Creativity_Score__c}" />
+		<apex:inputHidden value="{!Task.LastModifiedDate}" />
+		<apex:inputHidden value="{!Task.Notes_on_Restriction__c}" />
+	</apex:form>
+</apex:page>

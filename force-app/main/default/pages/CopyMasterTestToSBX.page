@@ -1,0 +1,20 @@
+<apex:page standardController="Master_Test__c" extensions="CopyMasterTestToSBXController">
+
+    <apex:form >
+
+        <apex:outputField value="{!Master_Test__c.Name}"/><br/>
+        <apex:outputField value="{!Master_Test__c.Account_Name__c}"/><br/>
+        <apex:outputField value="{!Master_Test__c.Opportunity__r.AccountId}"/><br/>
+        <apex:outputField value="{!Master_Test__c.Opportunity__c}"/><br/>
+
+        <apex:commandButton action="{!postMasterTestToSBX}" value="Post this Master Test" rerender="msgs" status="updateStatus" /> 
+        <br/><br/>
+
+        <apex:actionStatus startText="Running..." stopText=" " id="updateStatus"/>
+        <br/>
+        <apex:outputText value="{!statusMessages}" id="msgs" escape="false" />
+        
+
+    </apex:form>
+
+</apex:page>

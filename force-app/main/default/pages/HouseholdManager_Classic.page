@@ -1,0 +1,243 @@
+<apex:page standardController="Household__c" extensions="HouseholdManagerController" title="Household Manager" id="pgMain">
+
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+
+<apex:outputPanel id="opJQuery">
+<script>
+
+    //////////////////////////////
+    // jQuery
+    //////////////////////////////
+
+    j$ = jQuery.noConflict();
+    
+    j$(document).ready(function() {
+            
+        j$(".btnNew").click(function() {
+            j$( "#dialog-addRespondent" ).dialog( "open" );     
+        });
+                
+        j$(".btnCreateRespondent").click(function() {
+            j$( "#dialog-addRespondent" ).dialog( "close" );    
+            j$( "#dialog-createRespondent" ).dialog( "open" );  
+        });
+        
+        j$(".btnCreate").click(function() {
+            j$( "#dialog-createRespondent" ).dialog( "close" );
+            afRefreshResults();
+        });
+        
+        j$( "#dialog-addRespondent" ).dialog({
+            autoOpen: false,
+            height: 600,
+            width: 600,
+            modal: true,
+            zIndex: 9,
+            title: "Add Respondents",
+            buttons: {
+                Close: function() {
+                    j$(this).dialog( "close" );
+                }
+            }
+        });
+        
+        j$( "#dialog-createRespondent" ).dialog({
+            autoOpen: false,
+            height: 550,
+            width: 400,
+            modal: true,
+            zIndex: 9,
+            title: "Create a new Respondent",
+            buttons: {
+                Close: function() {
+                    afRefreshResults();
+                    j$(this).dialog( "close" );
+                }
+            }
+        });
+        
+        j$( "#dialog-loading" ).dialog({
+            autoOpen: false,
+            height: 150,
+            width: 400,
+            modal: true,
+            resizable: false,
+            draggable: false
+        });
+        
+    });
+</script>
+</apex:outputPanel>
+<script>    
+    
+    /////////////////////////////
+    // Javascript
+    /////////////////////////////
+    function statusShow() {
+        j$( "#dialog-loading" ).dialog( "open" );
+    }
+        
+    function statusHide() {
+        j$( "#dialog-loading" ).dialog( "close" );
+    }
+    
+    function addRespondent(strContactId) {
+    
+        Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.HouseholdManagerController.addRespondent}',
+            '{!Household__c.Id}',
+            strContactId,
+            function(result){
+                if(result != 'success') {
+                    alert(result);
+                } else {
+                    afRefreshResults();
+                }
+            }
+        );
+    }
+
+</script>
+
+<apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+
+<apex:form id="frmHousehold">
+
+    <apex:sectionHeader title="Manage Household" subTitle="Household Address and Members" />
+
+    <br />
+
+    <apex:detail subject="{!Household__c.Id}" relatedList="false" title="false" id="adHH" inlineEdit="true" rendered="{! $User.UIThemeDisplayed == 'Theme3' }"/>
+    
+    <apex:pageBlock id="pbMember" title="Household Members" mode="inlineEdit">
+    
+        <apex:pageBlockButtons >
+            <input type="button" value="Add Respondent" class="btn btnNew" />
+            <!-- <apex:commandButton value="Merge Households" action="{!mergeHousehold}" /> -->
+            <apex:commandButton value="Edit" action="{!saveMembers}" id="editButton" style="display:none;" rerender="pbMember" />
+            <apex:commandButton value="Save" action="{!saveMembers}" id="saveButton" style="display:none;" rerender="pbMember" />
+            <apex:commandButton value="Cancel" action="{!cancel}" id="cancelButton" style="display:none;"/>
+        </apex:pageBlockButtons>
+            <apex:pageBlockTable id="pbtMembers" value="{!lstMembers}" var="m" rendered="{!IF(lstMembers.size > 0,true,false)}">
+                <apex:column headerValue="Actions" width="200px">
+                    <apex:commandButton action="{!removeRespondent}" value="Remove" rerender="pbMember, opJQuery" status="asShowInterstitial">
+                        <apex:param name="strRespondentId" assignTo="{!strRespondentId}" value="{!m.Id}" />
+                    </apex:commandButton>
+                    <apex:commandButton action="{!null}" value="Search for Family" rerender="frmAddRespondent" styleClass="btnNew">
+                        <apex:param name="conSearchTitle" assignTo="{!conSearch.Title}" value="{!m.Contact__r.Lastname}" />
+                    </apex:commandButton>
+                </apex:column>
+                <apex:column headerValue="PID">
+                    {!m.Contact__r.PID__c}
+                </apex:column>
+                <apex:column headerValue="Respondent">
+                    <a href="/{!m.Contact__c}" target="_blank">{!m.Contact__r.Name}</a>
+                </apex:column>
+                <apex:column headerValue="Status">
+                    {!m.Status__c}
+                </apex:column>
+                <apex:column headerValue="Age">
+                    {!m.Contact_Age__c}
+                </apex:column>
+<!--                 <apex:column headerValue="Type">
+                    <apex:outputField id="householdType" html-data-hccId="{!m.Id}" value="{!m.Role__c}">
+                        <apex:inlineEditSupport showOnEdit="saveButton, cancelButton" 
+                            hideOnEdit="editButton" event="ondblclick" 
+                            changedStyleClass="myBoldClass" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column> -->
+<!--                 <apex:column headerValue="Relationship to HOH">
+                    <apex:outputField value="{!m.Relationship_to_HOH__c}">
+                        <apex:inlineEditSupport showOnEdit="saveButton, cancelButton" 
+                            hideOnEdit="editButton" event="ondblclick" 
+                            changedStyleClass="myBoldClass" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column>
+                <apex:column headerValue="Responsible Contact">
+                    <apex:outputField value="{!m.Guardian__c}" rendered="{!IF(m.Contact_Age__c < 18,true,false)}">
+                        <apex:inlineEditSupport showOnEdit="saveButton, cancelButton" 
+                            hideOnEdit="editButton" event="ondblclick" 
+                            changedStyleClass="myBoldClass" resetFunction="resetInlineEdit"/>
+                    </apex:outputField>
+                </apex:column> -->
+            </apex:pageBlockTable>    
+    </apex:pageBlock>
+
+</apex:form>
+
+<div id="dialog-addRespondent">
+    
+    <apex:form id="frmAddRespondent">
+        
+        <apex:actionFunction name="afRefreshResults" action="{!refreshMemberList}" rerender="pbsRespondentResults, pbMember, opJQuery" status="asShowInterstitial"/>
+        
+<apex:pagemessages ></apex:pagemessages>
+
+        <apex:pageBlock mode="edit">
+            <apex:pageBlockSection title="Specify Respondent Criteria" columns="2">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="First Name" />
+                    <apex:inputText value="{!conSearch.FirstName}" /> 
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Last Name" />
+                    <apex:inputText value="{!conSearch.Title}" /> 
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:commandButton action="{!NULL}" value="Search" rerender="pbsRespondentResults, opJQuery" />
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection id="pbsRespondentResults" title="Search Results" columns="1">
+                <apex:pageBlockTable value="{!LstContacts}" var="c" width="100%">
+                    <apex:column headerValue="Action">
+                        <input type="button" class="btn" value="Add" onclick="addRespondent('{!c.Id}');" />
+                    </apex:column>
+                    <apex:column headerValue="Name" value="{!c.Name}" />
+                    <apex:column headerValue="Adult?" value="{!c.IsAdult__c}" />
+                    <apex:column headerValue="Age" value="{!c.Age__c}" /> <!-- Jeff Johnson added -->
+                    <apex:column headerValue="PID" value="{!c.PID__c}" /> <!-- Jeff Johnson added -->
+                    <apex:column headerValue="Email" value="{!c.Email}" /> <!-- Jeff Johnson added -->
+                </apex:pageBlockTable>
+                <br />
+                <div style="center">
+                    <input type="button" value="Create New Respondent?" class="btn btnCreateRespondent" />
+                </div>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    
+    </apex:form>
+        
+</div>
+
+<div id="dialog-createRespondent">
+
+    <apex:form id="frmCreateRespondent">
+    
+        <apex:pageblock id="pbCreate" mode="edit">
+            <apex:pageblockbuttons >
+                <apex:commandButton value="Create New Respondent" action="{!saveNew}" styleClass="btnCreate" rerender="pbsRespondentResults, pbMember, opJQuery" />
+            </apex:pageblockbuttons>
+            <apex:pageblocksection columns="1" id="pbsCreate">  
+                <apex:repeat value="{!$ObjectType.Contact.FieldSets.Respondent_Contact}" var="c">  
+                    <apex:inputfield value="{!conNew[c]}" />
+                </apex:repeat>  
+            </apex:pageblocksection>  
+        </apex:pageblock>
+    
+    </apex:form>
+
+</div>
+
+<div id="dialog-loading">
+
+    <p align="center">
+        <h2>Please wait while the page is processing</h2>
+    </p>
+    <p align="center">
+        <img src="{!URLFOR($Resource.jQueryDCS,'/images/ajax-loader.gif')}" border="0" />
+    </p>
+
+</div>
+
+</apex:page>

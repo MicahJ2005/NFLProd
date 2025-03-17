@@ -1,0 +1,77 @@
+<!-- 11.17.2023 - Sophia Murphy (Demand Chain)
+    Commented out - no longer in use -->
+<apex:page ><!-- standardController="Master_Test__c" extensions="HostToolController" showheader="false" sidebar="false" action="{!renderPrintable}">
+
+	<apex:stylesheet value="{!URLFOR($Resource.WebAssets, '/css/CSSHostToolPrintable.css')}"/>
+
+ 	<apex:pageblock id="pbRespondents">
+ 		<apex:sectionHeader title="Respondents and Tests" subTitle="Host Tool" />
+ 		<apex:pageBlockSection columns="2">
+			<apex:repeat value="{!$ObjectType.Master_Test__c.FieldSets.HostToolPrintable}" var="fs">
+				<apex:outputfield value="{!Master_Test__c[fs]}" />
+			</apex:repeat>
+		</apex:pageBlockSection>
+        <apex:repeat value="{!lstFullSessions}" var="s">
+           	<apex:pageBlockSection columns="2" title="{!s.ses.Name} ({!s.ses.Scheduled_Respondents__c}/{!s.ses.Recruits_Per_Session__c} respondents)">
+				<apex:repeat value="{!$ObjectType.Session__c.FieldSets.Quick_Display}" var="fs">
+					<apex:outputfield value="{!s.ses[fs]}" />
+				</apex:repeat>
+            </apex:pageBlockSection>
+            <apex:pageBlockSection columns="1">
+            	<apex:outputPanel >
+	            	<table class="list" border="1" cellpadding="0" cellspacing="0">
+	            		<thead class="rich-table-thead">
+	            			<tr class="headerRow ">
+	            				<th class="headerRow" scope="col" rowspan="2"><span>Tested Status</span></th>
+	            				<th class="headerRow" scope="col"><span>Resp #</span></th>
+	            				<th class="headerRow" scope="col"><span>Name</span></th>
+	            				<th class="headerRow" scope="col"><span>PID</span></th>
+	            				<th class="headerRow" scope="col"><span>Gender</span></th>
+	            				<th class="headerRow" scope="col"><span>Age</span></th>
+	            				<th class="headerRow" scope="col"><span>Street</span></th>
+	            				<th class="headerRow" scope="col"><span>Street 2</span></th>
+	            				<th class="headerRow" scope="col"><span>City</span></th>
+	            				<th class="headerRow" scope="col"><span>State</span></th>
+	            				<th class="headerRow" scope="col"><span>Zip</span></th>
+	            				<th class="headerRow" scope="col"><span>Org</span></th>
+	            				<th class="headerRow" scope="col"><span>Check</span></th>
+	            			</tr>
+	            		</thead>
+	            		<tbody>
+	            		<apex:repeat value="{!s.lstTR}" var="tr">
+	            			<tr class="dataRow">
+	            				<td class="dataCell" style="width:100px">{!tr.tr.Tested_Status__c}</td>
+	            				<td class="dataCell"><span>{!tr.tr.Respondent_Number__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Respondent__r.Name}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Respondent__r.PID__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Respondent__r.Gender__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Respondent__r.Age__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.hc.Household__r.MailingStreet__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.hc.Household__r.MailingStreet2__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.hc.Household__r.MailingCity__c}</span></td>
+	            				<td class="dataCell" style="width:30px"><span>{!tr.hc.Household__r.MailingState__c}</span></td>
+	            				<td class="dataCell" style="width:50px"><span>{!tr.hc.Household__r.MailingPostalCode__c}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Organization__r.Name}</span></td>
+	            				<td class="dataCell"><span>{!tr.tr.Check_Number__c} / {!tr.tr.Check_Amount__c}</span></td>
+	            			</tr>
+	            			<tr class="dataRow">
+	            				<td class="dataCell" colspan="12" style="padding-left: 30px;">
+	            					<strong>{!tr.tr.Respondent__r.Name}'s Quotas:</strong><br />
+	            					<apex:outputPanel rendered="{!tr.bolShowQuota}">
+		            					<apex:repeat value="{!mapRespondentQuotas[tr.tr.Id]}" var="mrq">
+		            						<apex:repeat value="{!mrq}" var="kv">
+		            							{!kv.key} = {!IF(kv.value == "1", "Qualified", "Did Not Qualify")}<br />
+		            						</apex:repeat>
+		            					</apex:repeat>
+		            				</apex:outputPanel>
+	            				</td>
+	            			</tr>
+	            		</apex:repeat>
+	            		</tbody>
+	            	</table>
+            	</apex:outputPanel>
+            </apex:pageBlockSection>
+		</apex:repeat>
+	</apex:pageBlock>
+-->
+</apex:page>

@@ -1,0 +1,136 @@
+<apex:page standardController="Master_Test__c" extensions="QuotaGroupVisualizerController" showHeader="true" sidebar="true">
+	
+	<!-- jQuery libraries -->
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/tablesorter.css')}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+
+	<style>
+		.detailWrapper {
+			display: block;
+			margin-top: 10px;
+		}
+
+		.wrapperMQG {
+			width: 49%;
+			float: right;
+		}
+
+		.wrapperMQ {
+			width: 50%;
+			float: left;
+		}
+
+
+
+		.divMQInstances {
+			min-width: 50%;
+		}
+
+		#divMQGroups {
+			min-width: 50%;
+		}
+
+		.divMQDraggable {
+			float:left;
+			min-height: 50px;
+			min-width: 190px;
+		}
+
+		.divMQDroppable {
+			float:left;
+			min-height: 50px;
+			min-width: 200px;
+		}
+	</style>
+
+	<script>
+	    j$ = jQuery.noConflict();
+	    j$(document).ready(function() {
+
+			j$(document).on("keyup", '.masterQuota', function() {
+
+				var mqId = j$(this).attr('data-mqid');
+
+				if(j$(this).val() == '') {
+					j$(document).find('.sessionQuota').each(function() {
+						if(j$(this).attr('data-mqid') == mqId) {
+							j$(this).prop('disabled', false);
+						}
+					});
+				} else {
+					j$(document).find('.sessionQuota').each(function() {
+						if(j$(this).attr('data-mqid') == mqId) {
+							j$(this).val('');
+							j$(this).prop('disabled', true);
+						}
+					});
+				}
+			});
+
+			function verifyInput() {
+				j$(document).find('.sessionQuota').each(function() {
+					
+					var retVal;
+					retVal = true;
+
+					// Check all Session Quotas for Values
+					if(!j$(this).prop('disabled') && j$(this).val() == '') {
+						console.log('Found unassigned Quota Row!');
+						retVal = false;
+					}
+
+					if(!retVal) { alert('You must enter a Quota Grouping at all levels before continuing!'); }
+					return retVal;
+
+				});
+			}
+	        
+
+	    });
+	</script>
+	<apex:form >
+		<apex:sectionHeader title="Master Test" subtitle="Quota Grouping Visualizer" />
+		<apex:pageMessages id="pmMain"></apex:pageMessages>
+		<apex:pageBlock id="pbMain">
+			<apex:pageBlockButtons location="top">
+				<apex:commandButton id="cmdCancel" value="Return to Test" action="{!cancel}" />
+				<apex:commandButton id="cmdSave" value="Save Quota Groupings" action="{!saveQuotas}" rerender="pbMain"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection >
+				<apex:repeat value="{!$ObjectType.Master_Test__c.FieldSets.QuotaVisualizer}" var="fs">
+	                <apex:outputfield value="{!Master_Test__c[fs]}" />
+	            </apex:repeat>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="Master Quota Groups (Test Level)" columns="1" id="pbsMQ">
+				<apex:pageBlockTable id="pbtMQ" value="{!lstMQs}" var="mq">
+					<apex:column value="{!mq.Quota_Summary__c}" />
+					<apex:column value="{!mq.IsTrackingOnly__c}" />
+					<apex:column value="{!mq.Beacon_Condition__c}" />
+					<apex:column headerValue="Master Quota Group Number">
+						<apex:inputField styleClass="masterQuota" html-data-mqid="{!mq.Id}" value="{!mq.MQG__c}" style="width: 25px" />
+					</apex:column>
+				</apex:pageBlockTable>
+			</apex:pageBlockSection>
+			<apex:repeat value="{!lstSessions}" var="se">
+				<apex:pageBlockSection title="Session {!se.Name}" columns="1">
+					<apex:pageBlockTable value="{!se.Session_Quotas__r}" var="sq">
+						<apex:column value="{!sq.Master_Quota_Description__c}" />
+						<apex:column value="{!sq.Beacon_Condition__c}" />
+						<apex:column headerValue="Session Quota Group Number">
+							<apex:inputField styleClass="sessionQuota" 
+										html-data-mqid="{!sq.Master_Quota__c}" 
+										html-data-sqid="{!sq.Id}" 
+										value="{!sq.SQGManual__c}" 
+										style="width: 25px" 
+										rendered="{!sq.MQG__c = 0}" />
+						</apex:column>
+					</apex:pageBlockTable>
+				</apex:pageBlockSection>
+			</apex:repeat>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

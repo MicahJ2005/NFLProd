@@ -1,0 +1,20 @@
+<apex:page showHeader="true" sidebar="true" standardController="Master_Test__c" extensions="TestFillWeightingController">
+<apex:form id="frmMain">
+	<apex:sectionHeader title="Master Test" subtitle="Quota Fill Weighting" />
+	<apex:pageMessages id="pmMain" />
+	<apex:pageBlock title="Defined Master Quotas">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton id="btnSave" value="Save Weighting" action="{!saveWeighting}" rerender="frmMain" />
+			<apex:commandButton id="btnCancel" value="Cancel" action="{!cancel}" />
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection id="pbsQuotas" columns="1">
+			<apex:pageBlockTable id="pbtQuota" value="{!lstQuotas}" var="q">
+				<apex:column value="{!q.Quota_Summary__c}" />
+				<apex:column headerValue="Fill Weight">
+					<apex:inputField value="{!q.Fill_Weighting__c}" />
+				</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</apex:form>
+</apex:page>

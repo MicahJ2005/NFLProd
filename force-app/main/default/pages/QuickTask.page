@@ -1,0 +1,56 @@
+<apex:page controller="QuickTaskController" title="Quick Task" showHeader="true" sidebar="true" tabStyle="Task">
+
+<style>
+    .pbSubheader h3 {
+        color: #000000;
+    }
+</style>
+
+<script>
+
+    window.onload=function(){
+        document.getElementsByClassName("txtTaskComments")[0].focus();
+    }
+
+</script>
+
+<apex:form id="frmMain">
+    <apex:sectionHeader title="FPI Touch Point Process" subtitle="Quick Log A Touch Point" />
+    
+    <apex:pageMessages />
+
+    <apex:pageblock title="Touchpoint Edit">
+        <apex:pageBlockButtons >
+            <apex:commandButton id="btnCancel" value="Cancel" action="{!cancel}" />
+            <apex:commandButton id="btnSave" value="Save" action="{!saveTask}" />
+        </apex:pageBlockButtons>
+        <apex:pageblockSection >
+            <apex:inputField value="{!tskNew.Subject}"></apex:inputField>
+            <apex:outputField value="{!tskNew.Status}"></apex:outputField>
+            <apex:inputField value="{!tskNew.Type}"></apex:inputField>
+            <apex:inputField value="{!tskNew.OwnerId}"></apex:inputField>
+            <apex:inputField value="{!tskNew.ActivityDate}"></apex:inputField>
+            <apex:inputField Id="IFwho" value="{!tskNew.WhoId}"></apex:inputField>
+            <br />
+            <apex:inputField value="{!tskNew.WhatId}"></apex:inputField>
+        </apex:pageblockSection>
+        <apex:pageBlockSection columns="1">
+            <apex:inputField styleClass="txtTaskComments" value="{!tskNew.Description}" style="width:80%;height: 100px;"></apex:inputField>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection title="Schedule follow up task">
+            <apex:inputField value="{!tskFollowup.Subject}"></apex:inputField>
+            <apex:outputField value="{!tskFollowup.Status}"></apex:outputField>
+            <apex:inputField value="{!tskFollowup.Type}"></apex:inputField>
+            <apex:inputField value="{!tskFollowup.OwnerId}"></apex:inputField>
+            <apex:inputField value="{!tskFollowup.ActivityDate}"></apex:inputField>
+            <apex:inputField value="{!tskFollowup.WhoId}"></apex:inputField>
+            <br />
+            <apex:inputField value="{!tskFollowup.WhatId}"></apex:inputField>
+        </apex:pageblockSection>
+        <apex:pageBlockSection columns="1">
+            <apex:inputField value="{!tskFollowup.Description}" style="width:80%;height: 100px;"></apex:inputField>
+        </apex:pageBlockSection>
+    </apex:pageblock>
+</apex:form>
+
+</apex:page>

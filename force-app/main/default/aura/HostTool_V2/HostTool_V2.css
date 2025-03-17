@@ -1,0 +1,11 @@
+.THIS .toast{
+    z-index: 999;
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    top: 90px;
+}
+
+.THIS .isFull {
+    background-color: lightgray;
+}

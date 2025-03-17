@@ -1,0 +1,13 @@
+<!-- commented out - no longer used <apex:page controller="GenerateWordDocs_Controller" action="{!runNow}" showHeader="false">
+    <apex:form id="form" style="margin-left:40px;">
+           <br/><br/>Multiple Case Queues of type "Fielding Test Summary" have been found.<br/>
+        Please select the correct Case Queue to generate your document.<br/><br/>
+        <apex:selectList label="Please select which Case Queue" size="1" value="{!selectedCaseQueue}">
+            <apex:selectOptions value="{!availableCQs}">
+            </apex:selectOptions>
+            
+            <apex:actionSupport event="onchange" reRender="form" action="{!redirect}">
+            </apex:actionSupport>
+        </apex:selectList>     
+    </apex:form>
+</apex:page>--><apex:page ></apex:page>

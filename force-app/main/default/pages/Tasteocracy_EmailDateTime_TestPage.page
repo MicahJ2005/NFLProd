@@ -1,0 +1,6 @@
+<!-- just a test page to show the Tasteocracy_EmailDateTime component -->
+<apex:page standardController="Test_Respondent__c">
+    PST: <c:Tasteocracy_EmailDateTime dtValue="{!Test_Respondent__c.Session_PST_Date__c}" dtFormat="EEEE M/d/yyyy h:mm a" />
+    <br/>
+    CST: <c:Tasteocracy_EmailDateTime dtValue="{!Test_Respondent__c.Session_Date__c}" dtFormat="EEE M/d/yyyy h:mm a" />
+</apex:page>

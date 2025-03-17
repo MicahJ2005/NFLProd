@@ -1,0 +1,9 @@
+.THIS .slds-modal__container{
+    max-width: 60rem !important;
+    width:100% !important;
+}
+
+.THIS.slds-modal__container{
+    max-width: 60rem !important;
+    width:100% !important;
+}

@@ -1,0 +1,282 @@
+<!-- Commented out - TED is no longer used <apex:page showHeader="true" sidebar="true" standardController="Master_Test__c" extensions="TestExecutionDetailManagerController" title="TestExecutionDetailPage">
+    <apex:form id="TestExecutionDetailPage"> 
+    <apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+    <apex:sectionHeader title="Test Execution Detail" subtitle="{!Master_Test__c.Opportunity_Name__c}" />
+    <apex:pageBlock id="pbMain" title="Template To Download">   
+        	<apex:commandButton value="Client Template" onclick="https://fpipartsbx--partsbx--c.cs2.content.force.com/servlet/servlet.FileDownload?file=015R0000000Ky48"/>
+    </apex:pageBlock>
+        
+    <apex:pageBlock >
+            <apex:outputLink value="/{!Master_Test__c.ID}" id="MTLink">{!Master_Test__c.Name} </apex:outputLink>
+        	<br/><br/>
+        	<apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+        	<apex:commandButton value="Cancel" action="{!cancel}"/>
+   	<!--Is this an IHUT section  -
+        <apex:pageBlockSection id="IHUTInfo">
+            <apex:inputField value="{!objIHUT.Is_IHUT_Applicable__c}" id="IHUTYes">
+                <apex:actionSupport event="onchange" reRender="TestExecutionDetailPage"/>
+            </apex:inputField>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+ 
+
+    <apex:pageBlock id="productShow" title="Product & Procurement Information">
+            <apex:pageBlockSection id="productdetail">
+                <!--1--<apex:inputField value="{!tskNew.FPI_Code__c}" id="FPICode1"/> 
+                <!--2--<apex:inputField value="{!tskNew.Rotation_Description__c}" id="rotationDesc"/>
+                <!--3--<apex:inputField value="{!tskNew.Who_Will_Procure__c}" id="ProcureProvideBy">
+                			<apex:actionSupport event="onchange" reRender="productShow"/></apex:inputField>
+                <!--4--<apex:inputField value="{!tskNew.Product_Label_Detail__c}" id="ProdLblDet"/>
+        	</apex:pageBlockSection>
+        	<!--start conditionally displays for option 'Client Provided' --
+            <apex:pageBlockSection rendered="{!IF(tskNew.Who_Will_Procure__c == 'Client',true,false)}">	
+                <!--3b--<apex:inputField value="{!objIHUT.Type_of_delivery_vehicle__c}" id="typeDelVeh"/>
+                <!--3a--<apex:inputField value="{!tskNew.Product_Pre_Coded__c}" id="ProdPreCoded"/>
+                <!--3c--<apex:inputField value="{!objIHUT.Type_of_delivery_vehicle_Other__c}" id="typeDelVehOther"/>
+        	</apex:pageBlockSection>
+            <!--end conditionally displays for option 'Client Provided' --
+        	<apex:pageBlockSection >
+        		<!--4--<apex:inputField value="{!tskNew.Requested_Qty__c}" id="ReqQty"/>
+                
+            </apex:pageBlockSection>
+        	<!--start conditionally displays for every option BUT 'Client Provided' --
+        	<apex:pageBlockSection id="CompanyProcure" rendered="{!IF(OR(tskNew.Who_Will_Procure__c == 'COV-PLY',tskNew.Who_Will_Procure__c == 'COV-LIV',tskNew.Who_Will_Procure__c == 'Remote Partner',tskNew.Who_Will_Procure__c == 'Other (Please Specify)'),true,false)}">
+
+                <!--6--<apex:inputField value="{!tskNew.UPC_Code__c}" id="UPCCode"/>
+            	<!--7--<apex:inputField value="{!tskNew.Req_Product_Size__c}" id="ReqPC"/>
+                <!--8--<apex:inputField value="{!tskNew.Req_use_by_date__c}" id="ReqUBD"/>
+                <!--9--<apex:inputField value="{!tskNew.Req_Lot_Code__c}" id="ReqLC"/>
+           	
+        	</apex:pageBlockSection>
+        	<!--end conditionally displays for every option BUT 'Client Provided' --
+            <apex:pageBlockSection rendered="{!IF(objIHUT.Is_IHUT_Applicable__c == 'Yes',true,false)}">
+                <!--10--<apex:inputField value="{!tskNew.Product_Package_Dimensions__c}" id="pkgDim"/>
+            	<!--11--<apex:inputField value="{!tskNEW.Product_Package_Weight__c}" id="pkgwt"/>              
+        	</apex:pageBlockSection>	
+    <!-- Button for the inventory add items (tasks) --
+        <Apex:pageblocksection id="newInventoryAdd">
+             <apex:commandButton value="Add New Product" action="{!AddNewInventory}" rerender="productShow"/>
+        </Apex:pageblocksection>
+
+<!-- Add Inventory display section --
+        <apex:pageblocksection id="lsttasksect">
+            <apex:pageblocktable value="{!lstTasks}" var="t">
+                <apex:column ><apex:commandButton value=" View " onclick="window.open('/{!t.id}')" reRender="two"/></apex:column>
+                <apex:column ><apex:commandButton value=" Edit " onclick="window.open('/{!t.id}/e?retURL={!t.id}')" reRender="two"/></apex:column>
+                <apex:column value="{!t.FPI_Code__c}"/>
+                <apex:column value="{!t.Rotation_Description__c}"/>
+                <apex:column value="{!t.Who_Will_Procure__c}"/>
+                <apex:column value="{!t.Product_Label_Detail__c}"/>
+                <apex:column value="{!t.UPC_Code__c}"/>
+                <apex:column value="{!t.Requested_Qty__c}"/>
+                <apex:column value="{!t.Product_Pre_Coded__c}"/>
+                <apex:column value="{!t.Exp_Date_or_Use_By_Date__c}"/>
+                <apex:column value="{!t.Exp_or_Use_By_Date_2__c}"/>
+                <apex:column value="{!t.Exp_or_Use_By_Date_3__c}"/>
+                <apex:column value="{!t.Exp_or_Use_By_Date_4__c}"/>
+                <apex:column value="{!t.Exp_or_Use_By_Date_5__c}"/>
+            </apex:pageblocktable>
+        </apex:pageblocksection>
+        <apex:pageBlockSection >
+                <!--12--<apex:inputField value="{!objFTS.Product_Storage__c}" id="productStorage"/>
+                <!--13--<apex:inputField value="{!objFTS.Post_Test_Product_Handling__c}" id="PostTestHand"/>
+                <!--14--<apex:inputField value="{!objFTS.Product_Storage_Other__c}" id="productStorageOther" /> 
+                <!--14a--<apex:inputField value="{!objFTS.Post_Test_Product_Handling_Other__c}" id="tskPostTestOther"/><br/>                
+                <!--15--<apex:inputField value="{!objFTS.PT_Return_Product_To__c}" id="PostTestRet"/>
+        </apex:pageBlockSection>
+        <!--View The Case Queue Link--
+        	<apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+			<apex:outputLink value="/{!objFTS.id}"> View Field Test Summary </apex:outputLink>         
+   </apex:pageBlock>
+
+   <apex:pageBlock id="IHUTShow" title="IHUT Information" rendered="{!IF(objIHUT.Is_IHUT_Applicable__c == 'Yes',true,false)}">
+		<!--Conditionally seen IHUT fieldSet --
+            <apex:pageBlockSection columns="2" id="IHUTDetail"> 
+             
+                <apex:repeat value="{!$ObjectType.Task_Queue__c.Fieldsets.IHUT}" var="f">
+                    <apex:inputField value="{!objIHUT[f.fieldPath]}" required="{!OR(f.required, f.dbrequired)}">
+                    	<apex:actionSupport event="onchange" reRender="IHUTShow"/></apex:inputField>
+                </apex:repeat>
+            </apex:pageBlockSection>
+
+            <!--Conditionally seen IHUT detail section.... --
+        <apex:pageBlockSection id="IHUTDelServInfo" rendered="{!IF(objIHUT.Type_of_delivery_service__c == 'Other (Please Specify)',true,false)}">
+            <apex:inputField value="{!objIHUT.Type_of_delivery_service_Other__c}" id="IHUTDelTypeServOther" ></apex:inputField>
+            </apex:pageBlockSection>
+                    
+		<!-- this section displays the type of delivery vehicle... cannot display conditionally from a fieldset in outputpanel --
+        <apex:outputPanel rendered="{!IF(objIHUT.Type_of_delivery_vehicle__c == 'Other (Please Specify)',true,false)}">
+            <apex:pageBlockSection columns="1" id="IHUTDelVehDetail" title="Please Specify the type of vehicle that will delivery the product">
+                <apex:repeat value="{!$ObjectType.Task_Queue__c.Fieldsets.IHUTDelTypeVeh}" var="f">
+                    <apex:inputField value="{!objIHUT[f.fieldPath]}" required="{!OR(f.required, f.dbrequired)}"/>
+                </apex:repeat>
+            </apex:pageBlockSection>
+        </apex:outputPanel>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/> 
+        <!--View The Case Queue Link--
+        <apex:outputLink value="/{!objIHUT.id}"> View IHUT Case Queue </apex:outputLink>
+        </apex:pageBlock>
+
+
+	<apex:pageBlock id="serveShow" title="Serving Information">
+        <apex:pageBlockSection id="productServingdetail">
+            <apex:inputField value="{!objAVIT.Serving_Size__c}" id="ServeSize"/>
+            <apex:inputField value="{!objFTS.Product_Prep_Instructions__c}" id="Prepinst"/>
+            <apex:inputField value="{!objAVIT.Serving_Carriers__c}" id="serveCarrier"/>
+            <br/>
+            <apex:inputField value="{!objAVIT.Serving_Container__c}" id="ServeContainer">
+                <apex:actionSupport event="onchange" reRender="serveShow"/></apex:inputField>
+            <apex:inputField value="{!objAVIT.Serving_Utensil__c}" id="serveUtensil">
+                <apex:actionSupport event="onchange" reRender="serveShow"/></apex:inputField>
+            
+      	</apex:pageBlockSection>
+        <apex:outputPanel >
+            <apex:pageBlockSection >
+                <apex:pageBlocksectionitem id="Servother" rendered="{!IF(objFTS.Serving_Container__c == 'Other (Please Specify)',true,false)}">
+                    <apex:outputtext value="Serving Container (Other)"/>
+                    <apex:inputfield id="ServContainerOther" label="Serving Container (Other)" value="{!objFTS.Serving_Container_Other__c}"/>
+                </apex:pageBlocksectionitem>
+           	<apex:pageblocksectionitem id="ServeUtensOther" rendered="{!IF(objFTS.Serving_Utensil__c == 'Other (Please Specify)',true,false)}">
+                <apex:outputtext value="Serving Untensil (Other)"/>
+               	<apex:inputfield id="ServUtensOther" label="Serving Untensil (Other)" value="{!objFTS.Serving_Utensil_Other__c}"/> 
+            </apex:pageblocksectionitem>
+                
+        	</apex:pageBlockSection>
+        </apex:outputPanel>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/> 
+        <!--View The Case Queue Link--
+        <apex:outputLink value="/{!objFTS.id}"> View Field Test Summary </apex:outputLink> 
+	</apex:pageBlock>
+        
+
+    <apex:pageBlock id="equipShow" title="Equipment">
+        <apex:pageBlockSection id="stdEquip">
+            <apex:inputField value="{!objTER.Standard_Equipment_Needs__c}" id="stdEquipmnt"/>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection id="specEquip">
+            <apex:inputField value="{!objTER.Special_Equipment__c}" id="specEquipmnt"/><br/>
+            <apex:inputField value="{!objTER.Special_Equipment_Needs__c}" id="specEquipmntNeeds"/>
+        </apex:pageBlockSection>
+<!--Conditionally display additional fields based on the Equipment information input section.
+        If 'special equipment' is either 'Client to procure' OR "FPI To Procure' show the fieldSet with additional detail--
+            <apex:pageBlockSection columns="2" rendered="{!IF(objTER.Standard_Equipment_Needs__c == 'Other (Please Specify)',true,false)}" id="stdEquipment">
+                    <apex:inputField id="EquipOther" value="{!objTER.What_Equipment_Is_Needed__c}"/>
+                <apex:pageblocksectionitem rendered="{!IF(OR(objTER.Special_Equipment__c == 'Client Provided',objTER.Special_Equipment__c == 'COV-PLY To Provide',objTER.Special_Equipment__c == 'COV-LIV To Provide',objTER.Special_Equipment__c == 'Remote To Provide'),true,false)}" id="specEquipment">
+                    <apex:outputtext value="Special Equipment Needs"></apex:outputtext>
+                    <apex:inputField id="SpecEquipOther" value="{!objTER.Special_Equipment_Needs__c}"/>        
+                </apex:pageblocksectionitem>
+            </apex:pageBlockSection>
+<!--Conditionally display "Equipment Other" field based on the multi-select "Equipment Needs" field --
+        <apex:outputPanel rendered="{!IF(objTER.Equipment_Needs__c == 'Other',true,false)}">
+            <apex:pageBlockSection columns="1" id="idEquipmentOther" >
+                <apex:repeat value="{!$ObjectType.Task_Queue__c.Fieldsets.Equipment_Other}" var="f">
+                    <apex:inputField value="{!objTER[f.fieldPath]}" required="{!OR(f.required, f.dbrequired)}"/>
+                </apex:repeat>
+            </apex:pageBlockSection>
+        </apex:outputPanel>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/> 
+        <!--View The Case Queue Link--
+        <apex:outputLink value="/{!objTER.id}"> View Test Event Request </apex:outputLink>
+    </apex:pageBlock>
+    <apex:pageBlock id="PrepTrialShow" title="Prep Trial">
+            <apex:pageBlockSection id="PrepTrialStart">
+                <apex:inputField value="{!objFTS.Does_Client_want_Prep_Trial__c}" id="PrepTrialPlanned">
+                    <apex:actionSupport event="onchange" reRender="PrepTrialShow"/>
+                </apex:inputField>
+            </apex:pageBlockSection>     
+		<!--Prep Trial conditionally seen section --
+         <apex:outputPanel rendered="{!IF(objFTS.Does_Client_want_Prep_Trial__c == 'Yes',true,false)}">
+            <apex:pageBlockSection id="PTfield">
+                
+                <apex:inputField value="{!objFTS.Prep_Trial_Preference__c }" />
+                <apex:inputField value="{!objFTS.Prep_Trial_in_Bid__c }" />
+                <apex:inputField value="{!objFTS.Prep_Trial_details__c }" />
+            </apex:pageBlockSection>
+                
+        </apex:outputPanel>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+        <!--View The Case Queue Link--
+        <apex:outputLink value="/{!objFTS.id}"> View Test Summary </apex:outputLink>
+    </apex:pageBlock> 
+            
+    <apex:pageBlock id="clientShow" title="Client Info">
+        
+	<!--Conditionally displays Client attending information (in a fieldSet) based on 'Client Information' section  --
+     	<apex:pageBlockSection id="idClientDetail">
+            <apex:inputField id="clientLeadOnSite" value="{!objFTS.Lead_Client__c}"/>
+            <apex:inputField id="clientArrive" value="{!objFTS.Client_Arrival_Time__c}"/>
+            <apex:inputField id="clientMealPref" value="{!objFTS.Client_Meal_Preference__c}">
+                <apex:actionSupport event="onchange" reRender="clientShow"/></apex:inputField>
+            <apex:inputField id="addClientNames" value="{!objFTS.Additional_Client_Names__c}"/>
+            <apex:inputField id="clientOnSite" value="{!objFTS.Clients_on_Site__c}"/>
+            <div>
+                <!-- just an empty space --
+            </div>
+            <apex:inputField id="clientMeal1" value="{!objFTS.Client_Meal_1__c}"/>
+            <apex:inputField id="clientMeal2" value="{!objFTS.Client_Meal_2__c}"/>
+            <apex:inputField id="clientMeal3" value="{!objFTS.Client_Meal_3__c}"/>
+            <apex:inputField id="clientMeal4" value="{!objFTS.Client_Meal_4__c}"/>
+    	</apex:pageBlockSection>   
+        <apex:pageBlockSection id="idClientMeal" rendered="{!IF(objFTS.Client_Meal_Preference__c == 'Pre-Order',true,false)}">
+        	<apex:inputField id="clientMealpreOrder" value="{!objFTS.Client_Pre_Order_Meal__c}"/>
+        </apex:pageBlockSection>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+        <!--View The Case Queue Link--
+        <apex:outputLink value="/{!objFTS.id}"> View Test Summary </apex:outputLink>
+    </apex:pageBlock> 
+
+    <apex:pageBlock id="POFGShow" title="Peel Offs/Focus Groups">
+            <apex:pageBlockSection id="POFGstart">
+                <apex:inputField value="{!objAVIT.Peel_Off_Focus_Group_Planned__c}" id="POFGplanned">
+                    <apex:actionSupport event="onchange" reRender="POFGShow"/>
+                </apex:inputField>
+      </apex:pageBlockSection>
+        
+<!--Focus Group/Peel Off conditionally seen section --
+         <apex:outputPanel >
+            <apex:pageBlockSection rendered="{!IF(OR(objAVIT.Peel_Off_Focus_Group_Planned__c == 'Yes - Focus Group',objAVIT.Peel_Off_Focus_Group_Planned__c == 'Yes - Peel Off',objAVIT.Peel_Off_Focus_Group_Planned__c == 'Yes- Peel Offs & Focus Groups'),true,false)}" id="FGfield">
+                <apex:inputField value="{!Master_Test__c.Professional_Moderators__c}" id="MTmod"></apex:inputField>
+                
+                <apex:inputField value="{!objAVIT.FG_PO_Moderator__c}" />
+                <apex:inputField value="{!objAVIT.Peel_Off_Focus_Group_Info__c }" />
+                <apex:inputField value="{!objAVIT.PO_FG_Supplies__c }" />
+                <apex:inputField value="{!objAVIT.Testing_Location_Rooms__c }" />
+                <apex:inputField value="{!objAVIT.PO_FG_Supplies_Other__c }" />
+            </apex:pageBlockSection>             
+        </apex:outputPanel>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+        <!--View Case Queue Link--
+        <apex:outputLink value="/{!objAVIT.id}"> View AV/IT Case Queue </apex:outputLink>
+   </apex:pageBlock>  
+        
+
+        <apex:pageBlock id="AVITShow" title="AV/IT needs">
+            <apex:pageBlockSection id="AVITstart">
+                <apex:inputField value="{!objAVIT.How_Many_Ipads_Are_Needed__c}" id="AVITipads"/>
+                <apex:inputField value="{!objAVIT.Recording_Rooms__c}" id="AVITrecordRooms"/>
+                <apex:inputField value="{!objAVIT.Real_Time_Reporting__c}" id="AVITrealTimeReporting"/>
+                <apex:inputField value="{!objAVIT.Live_Streaming__c}" id="AVITliveStreaming"/>
+                <apex:inputField value="{!objAVIT.First_Date_Needed__c }" id="AVITfirstdate"/>
+                <apex:inputField value="{!objAVIT.Last_Date_Needed__c }" id="AVITlastdate"/>
+                <apex:inputField value="{!objAVIT.Audio_Visual_IT_Equipment_Notes__c}" id="AVITequimentNeeds"/>
+      </apex:pageBlockSection>
+        <!-- Save button --
+        <apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+		<!--View The Case Queue Link--
+            <apex:outputLink value="/{!objAVIT.id}"> View AV/IT Case Queue </apex:outputLink>
+    </apex:pageBlock>
+ 
+<!-- Additional Save/Cancel Buttons--
+    <apex:pageBlock id="pbMainEnd">
+            <apex:commandButton value="Save" action="{!saveCaseQueues}"/>
+        	<apex:commandButton value="Notify Team" action="{!NotifyTeam}"/>
+            <apex:commandButton value="Cancel" action="{!cancel}"/>
+    </apex:pageBlock>
+  </apex:form>
+</apex:page>--><apex:page ></apex:page>

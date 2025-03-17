@@ -1,0 +1,25 @@
+<apex:component access="global">
+    <style media="screen" type="text/css">  
+            .TextDiv
+            {
+            font-family: Tahoma, Geneva, sans-serif;
+            font-size: 12px;
+            padding:10px;
+            padding-left:15px;
+            padding-top:10px;
+            }   
+            BODY,TD,SPAN,DIV
+            {
+            font-family: Tahoma, Geneva, sans-serif;
+            font-size: 12px;
+            padding:10px;   
+            }
+        </style>
+    <table width="600">
+        <tr><td width="600" align="center">
+            <img src="http://fpinc.force.com/videostream{!$Resource.Tasteocracy_EmailLogo}" height="150" />
+            
+            <hr style="border: 2px solid #003882;" />
+            </td></tr>
+    </table>
+</apex:component>

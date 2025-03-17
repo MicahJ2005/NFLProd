@@ -1,0 +1,14 @@
+<apex:page standardController="Master_Test__c">
+    <apex:includeLightning />
+    <div id="SessionManager" />
+    <script>
+    $Lightning.use("c:SessionManagerApp", function() {
+        $Lightning.createComponent(
+            "c:SM_MasterSessionManager",
+            { recordId : "{!Master_Test__c.Id}" },
+            "SessionManager",
+            function(cmp) {}
+        );
+    });
+    </script>
+</apex:page>

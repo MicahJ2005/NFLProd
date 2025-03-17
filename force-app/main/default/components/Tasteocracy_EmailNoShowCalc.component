@@ -1,0 +1,7 @@
+<!-- 08.02.2023 - Sophia Murphy (Demand Chain)
+    Used in the tasteocracy emails to display the ordinal of no shows - 1st, 2nd, etc
+    Needs to calculate the number of no shows under their Contact record -->
+    <apex:component access="global" controller="Tasteocracy_EmailComponentController">
+        <apex:attribute name="strContactId" type="String" assignTo="{!contactId}" required="false" description="Id of Contact/Respondent" />
+        <apex:outputText value="{!FormattedOrdinal}" escape="false" />
+    </apex:component>

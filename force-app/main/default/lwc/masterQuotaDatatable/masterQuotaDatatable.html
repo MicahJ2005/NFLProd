@@ -1,0 +1,30 @@
+<template>
+    <div if:true={spinner} class="slds-spinner_inline spinner-padding">
+        <lightning-spinner variant="brand" alternative-text="Loading Records" size="medium"> </lightning-spinner>
+    </div>
+    <template if:true={show}>
+        <c-master-quota-edit-form related={recordId} onclose={handleClose}></c-master-quota-edit-form>
+    </template>
+    <template if:true={data}>
+        <lightning-card title={title} icon-name="custom:custom63">
+            <lightning-button label="New" slot="actions" onclick={onNewClick}></lightning-button>
+            <lightning-datatable
+                key-field="Id"
+                columns={columns}
+                data={data}
+                show-row-number-column
+                onrowaction={handleRowAction}
+                onvalueselect={handleSelection}
+                draft-values={draftValues}
+                oncellchange={handleCellChange}
+                onsave={handleSave}
+                oncancel={handleCancel}
+                sorted-direction={sortDirection}
+                sorted-by={sortedBy}
+                onsort={onHandleSort}
+                hide-checkbox-column
+            >
+            </lightning-datatable>
+        </lightning-card>
+    </template>
+</template>

@@ -1,0 +1,110 @@
+<!--
+  @description       : 
+  @author            : willh@demandchain.com
+  @group             : 
+  @last modified on  : 05-13-2021
+  @last modified by  : willh@demandchain.com
+  Modifications Log 
+  Ver   Date         Author                  Modification
+  1.0   05-09-2021   willh@demandchain.com   Initial Version
+-->
+<aura:component controller="SM_MasterSessionManager_Ctrl">
+    	<!-- Boolean attribute to open/close the modal -->
+	<aura:attribute name="isOpen" type="Boolean" default="false" access="public"/>
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <aura:attribute name="editSessionModalFields" type="List" default="Name,IsAvailableToRecruit__c,Session_Start__c,Session_End__c,Timezone__c,Min_to_Show__c,Max_to_Show__c,Test_Type__c,Research_Type__c,Check_Amount__c,Recruits_Per_Session__c,Recruiting_Notes__c,Special_Instructions_for_Respondents__c,Time_Between_Sessions__c,Session_Length__c,IsArticulationNeeded__c,Related_Test__c,Testing_Location__c,Linked_Session__c" />
+	<aura:attribute name="smDataColumns" type="List" description="The list of columns to be shown"/>
+    <aura:attribute name="qwData" type="object" description="The list of sessions"/>
+    <aura:attribute name="smQuotasData" type="Session_Quota__c[]" description="The list of session quotas"/>
+	<aura:attribute name="qwDataColumns" type="List" description="The list of columns to be shown"/>
+    <aura:attribute name="masterRecordID" type="String" description="Master record id" access="public"/>
+    <aura:attribute name="MSID" type="String" description="Master record id" access="public"/>
+    <aura:attribute name="currentSelectedRows" type="List" />
+    <aura:attribute name="smMasterTest" type="Master_Test__c" description="The master test"/>
+	<!-- With the help of aura method, a parent component can invoke a action on child component -->
+	<!-- Here we are executing this aura method from parent controller and sending the attribute value. -->
+	<aura:method name="showChildModal" action="{! c.openModal }" access="public">
+        <aura:attribute name="openModal" type="Boolean" default="false" access="public"/>
+    </aura:method>
+    <lightning:recordEditForm
+        aura:id="refDetails"
+        onsubmit="{!c.handleOnSubmit_singleSession}"
+        objectApiName="Session__c"> 
+	<!-- Here we wrapped our modal code inside aura:if. If it evaluates true, code inside it will be visible -->
+	<aura:if isTrue="{!v.isOpen}" >
+		<div class="slds-modal slds-modal--large slds-fade-in-open">
+			<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+			    <div class="slds-modal__container">
+			    	<!-- Header of Modal -->
+				    <header class="slds-modal__header">
+				        <lightning:buttonIcon iconName="utility:close" class="slds-modal__close" size="large" variant="bare" alternativeText="Close" onclick="{! c.closeModal }"/>
+				        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Edit Session Details &amp; Quotas</h2>
+				     </header>
+                     <aura:if isTrue="{!v.toastVisible}">
+						<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+					</aura:if>
+				     <!-- Body of Modal -->
+				      <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="{!'Master Test: ' + v.smMasterTest.Name}">
+                            
+                            <lightning:messages />
+                                
+                                <lightning:layout multipleRows="true" verticalAlign="end" horizontalAlign="spread">
+                                        <aura:iteration items="{!v.editSessionModalFields}" var="fld">
+                                            <lightning:layoutItem size="6" padding="around-small">
+                                                    <aura:if isTrue="{!fld eq 'Related_Test__c'}">
+                                                        <lightning:inputField fieldName="{!fld}" value="{!v.recordId}" />
+                                                        <aura:set attribute="else">
+                                                            <aura:if isTrue="{!fld eq 'Timezone__c'}">
+                                                                <lightning:inputField fieldName="Timezone__c" value="{!$Local.timezone}" />
+                                                                <aura:set attribute="else">
+                                                                    <!-- Hack to skirt around issue where lookups on new / created records don't work if they have lookup filters in place -->
+                                                                    <!-- If thats the case, then use a hack with a temporary lookup field with no lookup filters  -->
+                                                                    <aura:if isTrue="{!fld eq 'Linked_Session__c'}">
+                                                                        <lightning:inputField fieldName="Linked_Session_Temp__c" />
+                                                                        <aura:set attribute="else">
+                                                                            <lightning:inputField fieldName="{!fld}" />
+                                                                        </aura:set>
+                                                                    </aura:if>
+                                                                </aura:set>
+                                                            </aura:if>
+                                                        </aura:set>
+                                                    <aura:set attribute="else">
+                                                        <lightning:inputField fieldName="{!fld}" />
+                                                    </aura:set>
+                                                </aura:if>
+                                            </lightning:layoutItem>
+                                            
+                                            <aura:if isTrue="{!fld eq 'Timezone__c'}">
+                                                <lightning:layoutItem size="6" padding="around-small"></lightning:layoutItem>
+                                            </aura:if>
+                                        </aura:iteration>
+                                </lightning:layout>
+                        </lightning:card>
+                        <hr/>
+						<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Session Quotas (Single Session)" >
+                            <lightning:datatable aura:id="SessionQuotas"
+                                data="{!v.qwData}" 
+                                title="Master Quotas"
+                                keyField="Id" 
+                                columns="{!v.qwDataColumns}" 
+                                onrowaction="{! c.handleQWRowAction }" 
+                                onsort="{!c.updateMasterQuotasColumnSorting}" 
+                                sortedBy="{!v.smMasterQuotasSortedBy}"
+                                sortedDirection="{!v.smMasterQuotasSortedDirection}"
+                                class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"
+                                onrowselection="{!c.selectEvent_singleSession}"/>  
+						</lightning:card>
+				    </div>
+				    <!-- Footer of Modal -->
+				    <footer class="slds-modal__footer">
+				        <lightning:button variant="brand" type="submit" label="Save" title="Save" />
+				        <lightning:button variant="brand" label="Cancel" title="Cancel" onclick="{! c.closeModal }" />   
+				    </footer>
+			    </div>
+			</section>
+			<div class="slds-backdrop slds-backdrop_open"></div>
+		</div>
+	</aura:if>
+</lightning:recordEditForm>
+</aura:component>

@@ -1,0 +1,603 @@
+<!--
+  @description       : 
+  @author            : willh@demandchain.com
+  @group             : 
+  @last modified on  : 05-12-2021
+  @last modified by  : willh@demandchain.com
+  Modifications Log 
+  Ver   Date         Author                  Modification
+  1.0   04-26-2021   willh@demandchain.com   Initial Version
+        05-09-2023   Sophia Murphy (Demand Chain)
+                     Fixed issue with datatable firing main recordEditForm's onSubmit
+                     https://salesforce.stackexchange.com/questions/306753/lightning-datatable-that-is-nested-inside-a-recordeditform-call-onsubmit-on-ev
+                     https://salesforce.stackexchange.com/questions/340677/how-do-i-trigger-recordeditform-onsubmit-event-using-javascript
+-->
+<aura:component controller="SM_MasterSessionManager_Ctrl" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" >
+	<aura:attribute name="recordId" type="String" description="The ID for the Master Test with which to work."/>
+	<aura:attribute name="smMasterTest" type="Master_Test__c" description="The master test"/>
+	<aura:attribute name="smData" type="Session__c" description="The list of sessions"/>
+	<aura:attribute name="smDataColumns" type="List" description="The list of columns to be shown"/>
+	<aura:attribute name="smSortedBy" type="String" description="The column to be sorted"/>
+	<aura:attribute name="smSortedDirection" type="String" description="The direction for column to be sorted"/>
+	<aura:attribute name="smTestLocations" type="String[]" description="The list of testing locations"/>
+	<aura:attribute name="toastMsgText" type="String" description="The current text for the toast message." default="Message Not Set"/>
+	<aura:attribute name="toastVisible" type="Boolean" description="The current text for the toast message." default="false"/>
+    <aura:attribute name="testLookupFields" type="String[]" default="['Testing_Location__c']" />
+    <aura:attribute name="duplicateRecord" type="boolean" default="false" />
+    
+    <aura:attribute name="lookupComponent" type="Aura.Component" default="{}" />
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    
+    <lightning:card title="{!'Sessions for ' + v.smMasterTest.Opportunity_Name__c}" iconName="standard:orders">
+        <aura:set attribute="actions">
+            <lightning:button label="Back to Master Test" onclick="{!c.goToMasterTest}" iconName="utility:back" />
+        	<lightning:button variant="brand" label="Create Bulk Sessions" onclick="{!c.openBulkSessionsModal}" iconName="utility:add" />
+            <lightning:button variant="brand" label="{!$Label.c.SM_Add_Session}" onclick="{!c.addNewSession}" iconName="utility:add" />
+            <lightning:button variant="brand" label="{!$Label.c.SM_Master_Quota_Wizard}" onclick="{!c.openQuotaWizardModal}" iconName="utility:screen" />
+        </aura:set>
+    	<aura:set attribute="footer">
+            <lightning:button label="Back to Master Test" onclick="{!c.goToMasterTest}" iconName="utility:back" />
+        	<lightning:button variant="brand" label="Create Bulk Sessions" onclick="{!c.openBulkSessionsModal}" iconName="utility:add" />
+            <lightning:button variant="brand" label="{!$Label.c.SM_Add_Session}" onclick="{!c.addNewSession}" iconName="utility:add" />
+            <lightning:button variant="brand" label="{!$Label.c.SM_Master_Quota_Wizard}" onclick="{!c.openQuotaWizardModal}" iconName="utility:screen" />
+        </aura:set>
+    
+		<aura:if isTrue="{!v.toastVisible}">
+			<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+			</aura:if>
+			{!v.body}
+        	<lightning:datatable aura:id="dtSessions"
+					data="{!v.smData}" 
+					title="Sessions" 
+					keyField="Id" 
+					columns="{!v.smDataColumns}" 
+					onrowaction="{! c.handleRowAction }" 
+					onsort="{!c.updateColumnSorting}" 
+					sortedBy="{!v.smSortedBy}"
+					sortedDirection="{!v.smSortedDirection}"
+					onsave="{!c.smSave}"
+					class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"/>
+			
+		</lightning:card>
+	
+    <!--====== DETAILS MODAL ======-->
+	<aura:attribute name="editSessionModalID" type="String" description="The ID to be editied"/>
+	<aura:attribute name="editSessionModalFields" type="List" default="Name,IsAvailableToRecruit__c,Session_Start__c,Session_End__c,Timezone__c,Min_to_Show__c,Max_to_Show__c,Test_Type__c,Research_Type__c,Check_Amount__c,Recruits_Per_Session__c,Recruiting_Notes__c,Special_Instructions_for_Respondents__c,Time_Between_Sessions__c,Session_Length__c,IsArticulationNeeded__c,Related_Test__c,Testing_Location__c,Linked_Session__c" />
+	<aura:attribute name="smQuotasData" type="Session_Quota__c[]" description="The list of session quotas"/>
+	<aura:attribute name="smQuotasDataColumns" type="List" description="The list of columns to be shown"/>
+	<aura:attribute name="smQuotasSortedBy" type="String" description="The column to be sorted"/>
+	<aura:attribute name="smQuotasSortedDirection" type="String" description="The direction for column to be sorted"/>
+	<aura:attribute name="selectedTestLocRecord" type="Account" default="{}"/>
+	<aura:attribute name="selectedLinkedSession" type="Session__c" default="{}"/>
+    <aura:attribute name="addNewSession" type="Boolean" description="" default="false"/>
+    {!v.body}
+    <div aura:id="editSessionModal" class="slds slds-hide">
+        
+        <!--<lightning:recordEditForm
+							aura:id="refDetails"
+							onload="{!c.rfOnLoad}"
+							onsuccess="{!c.handleSaveSuccess}"
+							recordId="{!v.editSessionModalID}"
+              onerror="{!c.handleOnError}"
+              onsubmit="{!c.handleOnSubmit}"
+							objectApiName="Session__c">-->
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-modal__container90">
+                <div class="slds-modal__header">
+                    <div align="right">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeDetailsModal}" alternativeText="Close window."/>
+	                 </div>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{!$Label.c.SM_Edit_Session_Details_and_Quotas}</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                <lightning:recordEditForm
+                    aura:id="refDetails"
+                    onload="{!c.rfOnLoad}"
+                    onsuccess="{!c.handleSaveSuccess}"
+                    recordId="{!v.editSessionModalID}"
+                    onerror="{!c.handleOnError}"
+                    onsubmit="{!c.handleOnSubmit}"
+                    objectApiName="Session__c">
+					<!--<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="{!$Label.c.SM_Edit_Session_Details_and_Quotas}" >-->
+					<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="{!'Master Test: ' + v.smMasterTest.Name}">
+
+						<aura:if isTrue="{!v.toastVisible}">
+						<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+						</aura:if>
+                        
+                        <lightning:messages />
+                            
+                            <lightning:layout multipleRows="true" verticalAlign="end" horizontalAlign="spread">
+									<aura:iteration items="{!v.editSessionModalFields}" var="fld">
+                                        <lightning:layoutItem size="6" padding="around-small">
+                                            <aura:if isTrue="{!empty(v.editSessionModalID)}">
+                                                <aura:if isTrue="{!fld eq 'Related_Test__c'}">
+                                                    <lightning:inputField fieldName="{!fld}" value="{!v.recordId}" />
+                                            		<aura:set attribute="else">
+                                                    	<aura:if isTrue="{!fld eq 'Timezone__c'}">
+                                                            <lightning:inputField fieldName="Timezone__c" value="{!$Local.timezone}" />
+                                                        	<aura:set attribute="else">
+                                                    			<!-- Hack to skirt around issue where lookups on new / created records don't work if they have lookup filters in place -->
+                                                    			<!-- If thats the case, then use a hack with a temporary lookup field with no lookup filters  -->
+                                                    			<aura:if isTrue="{!fld eq 'Linked_Session__c'}">
+                                                    				<lightning:inputField fieldName="Linked_Session_Temp__c" />
+                                                                	<aura:set attribute="else">
+                                                						<lightning:inputField fieldName="{!fld}" />
+                                                					</aura:set>
+                                                                </aura:if>
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </aura:set>
+                                                </aura:if>
+                                                <aura:set attribute="else">
+                                                	<lightning:inputField fieldName="{!fld}" />
+                                                </aura:set>
+                                            </aura:if>
+                                        </lightning:layoutItem>
+                                        
+                                        <aura:if isTrue="{!fld eq 'Timezone__c'}">
+                                            <lightning:layoutItem size="6" padding="around-small"></lightning:layoutItem>
+                                        </aura:if>
+                                    </aura:iteration>
+                            </lightning:layout>
+					</lightning:card>
+                </lightning:recordEditForm>
+                    
+					<aura:if isTrue="{!or(v.addNewSession, v.editSessionModalID)}">
+						<hr/>
+						<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Session Quotas" >
+							<lightning:datatable 
+									data="{!v.smQuotasData}" 
+									title="Quotas" 
+									keyField="Id" 
+									columns="{!v.smQuotasDataColumns}" 
+									onrowaction="{! c.handleQuotasRowAction }" 
+									onsort="{!c.updateQuotasColumnSorting}" 
+									sortedBy="{!v.smQuotasSortedBy}"
+									sortedDirection="{!v.smQuotasSortedDirection}"
+									onsave="{!c.smSave}"
+									class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"/>
+							<table width="100%" Border="0">
+								<tr>
+									<td>
+										<lightning:button label="{!$Label.c.SM_Add_Quota}" onclick="{!c.openAddSessionQuotasModal}" />
+									</td>
+								</tr>
+							</table><br/>
+
+
+
+						
+						</lightning:card>
+					</aura:if>
+                </div>
+                <div class="slds-modal__footer">
+                    <lightning:button class="slds-button slds-button_neutral" onclick="{!c.closeDetailsModal}" label="Close" />
+                    <lightning:button variant="brand" type="submit" name="save" label="Save Session Details" onclick="{!c.handleSaveDetailsClick}" />
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open">
+        </div>
+        <!--</lightning:recordEditForm>-->
+    </div>
+	<!--====== DETAILS - ADD QUOTA MODAL ======-->
+	<aura:attribute name="bulkSessionQuotasDataColumns2" type="List" description="The list of columns to be shown"/>
+    <div aura:id="addSessionQuotasModal" class="slds slds-hide">
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-modal__container90">
+                <div class="slds-modal__header">
+                    <div align="right">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeAddSessionQuotasModal}" alternativeText="Close window."/>
+                    </div>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Add Quotas</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Add Quotas" >
+						<aura:if isTrue="{!v.toastVisible}">
+						<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+						</aura:if>
+						<u>Session Quotas:</u>
+						<lightning:datatable aura:id="dtAddSessionQuotas" oncellchange="{!c.doCellChange}"
+								data="{!v.bulkSessionsObject.masterQuotas}" 
+								title="Session Quotas" 
+								keyField="Id" 
+								columns="{!v.bulkSessionQuotasDataColumns2}" 
+								class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"/>
+						<table width="100%" Border="0">
+							<tr>
+								<td>
+									<lightning:button label="Add Selected Quotas" onclick="{!c.addSelectedQuotas}" />
+								</td>
+							</tr>
+						</table><br/>
+					</lightning:card>
+                </div>
+                <div class="slds-modal__footer">
+                    <lightning:button class="slds-button slds-button_neutral" onclick="{!c.closeAddSessionQuotasModal}" label="Close" />
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open">
+        </div>
+    </div>
+
+	<!--====== QUICK EDIT MODAL ======-->
+	<aura:attribute name="quickEditSessionModalID" type="String" description="The ID to be editied"/>
+	<aura:attribute name="smQuickEditData" type="List" description="The list of sessions to quick edit"/>
+	<aura:attribute name="NOTUSED_quickEditSessionModalFields" type="List" default="Name,IsAvailableToRecruit__c,Session_Start__c,Session_End__c,Min_to_Show__c,Max_to_Show__c,Test_Type__c,Check_Amount__c" />
+    <div aura:id="quickEditSessionModal" class="slds slds-hide">
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-modal__container90">
+                <div class="slds-modal__header">
+                    <div align="right">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeQuickDetailsModal}" alternativeText="Close window."/>
+                    </div>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Quick Edit Sessions</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Quick Edit Sessions" >
+						<aura:if isTrue="{!v.toastVisible}">
+						<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+						</aura:if>
+						<table border="0" CellPadding="5">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Start</th>
+									<th>End</th>
+									<th>Min</th>
+									<th>Max</th>
+									<th>Test</th>
+									<th>Incentive</th>
+									<th>Available?</th>
+								</tr>
+							</thead>
+							<tbody>
+								<aura:iteration items="{!v.smQuickEditData}" var="sessionRow">
+									<aura:if isTrue="{!sessionRow.Id}">
+									<tr>
+										<td>
+											<ui:inputText aura:id="{!sessionRow.Id + ':Name'}" value="{!sessionRow.Name}" />
+										</td>
+										<td>
+											<ui:inputDateTime aura:id="{!sessionRow.Id + ':Session_Start'}" value="{!sessionRow.Session_Start__c}" displayDatePicker="false" />
+										</td>
+										<td>
+											<ui:inputDateTime aura:id="{!sessionRow.Id + ':Session_End'}" value="{!sessionRow.Session_End__c}" displayDatePicker="false" />
+										</td>
+										<td>
+											<div style="display: inline-block; width: 40px;">
+												<ui:inputNumber aura:id="{!sessionRow.Id + ':Min_to_Show'}" value="{!sessionRow.Min_to_Show__c}" size="3" />
+											</div>
+										</td>
+										<td>
+											<div style="display: inline-block; width: 40px;">
+												<ui:inputNumber aura:id="{!sessionRow.Id + ':Max_to_Show'}" value="{!sessionRow.Max_to_Show__c}" size="3" />
+											</div>
+										</td>
+										<td>
+											<div style="display: inline-block; width: 40px;">
+											<ui:inputSelect aura:id="{!sessionRow.Id + ':Test_Type'}" value="{!sessionRow.Test_Type__c}" >
+												<ui:inputSelectOption text="BN - Bonus" />
+												<ui:inputSelectOption text="CA - Consumer Advisory Panel or Board" />
+												<ui:inputSelectOption text="CLT - Central Location Test" />
+												<ui:inputSelectOption text="DA - Descriptive Analysis" />
+												<ui:inputSelectOption text="ET - Ethnography" />
+												<ui:inputSelectOption text="EX - Express" />
+												<ui:inputSelectOption text="FG - Pre-recruited Focus Group" />
+												<ui:inputSelectOption text="HUT - Home Use Test" />
+												<ui:inputSelectOption text="INT - One-on-One Interviews" />
+												<ui:inputSelectOption text="KD - Key Drivers" />
+												<ui:inputSelectOption text="KP - Kitchen Practical" />
+												<ui:inputSelectOption text="PF - Protocept Fair" />
+												<ui:inputSelectOption text="PO - Peel - Offs" />
+												<ui:inputSelectOption text="PQ - Plant Quality" />
+												<ui:inputSelectOption text="PSA - Paid Send Away" />
+												<ui:inputSelectOption text="PT - Prototyping" />
+												<ui:inputSelectOption text="SD - Screendown" />
+												<ui:inputSelectOption text="STA - Stations" />
+												<ui:inputSelectOption text="SUR - Survey Only" />
+											</ui:inputSelect>
+											</div>
+										</td>
+										<td>
+											<div style="display: inline-block; width: 70px;">
+											<ui:inputCurrency aura:id="{!sessionRow.Id + ':Check_Amount'}" value="{!sessionRow.Check_Amount__c}" size="7" />
+											</div>
+										</td>
+										<td>
+											<ui:inputCheckbox aura:id="{!sessionRow.Id + ':IsAvailableToRecruit'}" value="{!sessionRow.IsAvailableToRecruit__c}" />
+										</td>
+									</tr>
+									</aura:if>
+								</aura:iteration>
+							</tbody>
+						</table>
+					</lightning:card>
+                </div>
+                <div class="slds-modal__footer">
+                    <lightning:button class="slds-button slds-button_neutral" onclick="{!c.saveQuickDetails}" label="Save" />
+                    <lightning:button class="slds-button slds-button_neutral" onclick="{!c.closeQuickDetailsModal}" label="Close" />
+                </div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open">
+        </div>
+    </div>
+	<!--====== CREATE BULK SESSIONS MODAL ======-->
+	<aura:attribute name="bulkSessionsObject" type="SM_MasterSessionManager_Ctrl.BulkSessions" description="apex class defined in the apex controller"/>
+	<aura:attribute name="breakTime" type="SM_MasterSessionManager_Ctrl.BreakTime" default="{}" />
+    <aura:attribute name="bShowPreview" type="Boolean" description="" default="false"/>
+	<aura:attribute name="bulkSessionQuotasColumns" type="List" description="The list of columns to be shown"/>
+	<aura:attribute name="bulkSessionQuotasDataColumns" type="List" description="The list of columns to be shown"/>
+    <aura:attribute name="bulkSessionFields" type="List" default="Time_Between_Sessions__c,Session_Length__c,Min_to_Show__c,Max_to_Show__c,Test_Type__c,Research_Type__c,Check_Amount__c,Recruits_Per_Session__c,Recruiting_Notes__c,Special_Instructions_for_Respondents__c,Testing_Location__c" />
+    <aura:attribute name="displayBulkSaveConfirm" type="boolean" default="false" />
+    <aura:attribute name="checkAmount" type="Decimal" />
+    <!--<aura:attribute name="bulkStart" type="String" description="The column to be sorted" default="08:00:00.000Z"/>
+    <aura:attribute name="bulkEnd" type="String" description="The column to be sorted" default="15:00:00.000Z"/>-->
+    <aura:attribute name="bulkStartDateTime" type="DateTime" description="The column to be sorted" />
+    <aura:attribute name="bulkEndDateTime" type="DateTime" description="The column to be sorted" />
+    <div aura:id="createBulkSessionsModal" class="slds slds-hide">
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <lightning:recordEditForm
+								aura:id="bulkSession"
+								objectApiName="Session__c"
+                                onsubmit="{!c.createPreview}" >
+            <div class="slds-modal__container slds-modal__container90">
+                <div class="slds-modal__header">
+                    <div align="right">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeBulkSessionsModal}" alternativeText="Close window."/>
+                    </div>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Create Bulk Sessions</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium bulkModal" id="modal-content-id-1">
+					<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Create Bulk Sessions" >
+						<aura:if isTrue="{!v.toastVisible}">
+						<div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+						</aura:if>
+                        
+                        <!-- JWL -->
+                        
+                            <lightning:layout multipleRows="true" verticalAlign="end" horizontalAlign="spread">
+                                <!-- Sophia Murphy: Updated to set the DATE AND TIME on the Start/End.  The picklist items were not behaving well with timezone changes and spring forward/fall back-->
+                                <!--<lightning:layoutItem size="6" padding="around-small">
+                                    <lightning:input type="Date" label="Session Day" value="{!v.bulkSessionsObject.sessionDay}" />
+                                </lightning:layoutItem>-->
+                                <lightning:layoutItem size="6" padding="around-small" class="slds-hide">
+                                    <lightning:inputField fieldName="Timezone__c" value="{!$Locale.timezone}" />
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="6" padding="around-small">
+                                    <lightning:input aura:id="bulkStartDateTime" type="DateTime" label="Start Time" value="{!v.bulkStartDateTime}" />
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="6" padding="around-small">
+                                    <lightning:input aura:id="bulkEndDateTime" type="DateTime" label="End Time" value="{!v.bulkEndDateTime}" />
+                                </lightning:layoutItem>
+                                <!--<lightning:layoutItem size="6" padding="around-small">
+                                    <lightning:input aura:id="bulkStart" type="Time" label="Start Time" value="{!v.bulkStart}" />
+                                </lightning:layoutItem>
+                                <lightning:layoutItem size="6" padding="around-small">
+                                    <lightning:input aura:id="bulkEnd" type="Time" label="End Time" value="{!v.bulkEnd}" />
+                                </lightning:layoutItem>-->
+                                <!-- James: putting these here for now-->
+                                <!--<lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:inputField fieldName="Time_Between_Sessions__c" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:inputField fieldName="Test_Type__c" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:input required="true" type="number" label="Session Length (in minutes)" value="{!v.bulkSessionsObject.sessionLength}" />
+                                            </lightning:layoutItem>
+                                <lightning:input type="text" label="Incentive Amount" value="{!v.incentiveAmount}" />
+                                --><!-- James: End -->
+							    <aura:iteration items="{!v.bulkSessionFields}" var="fld">
+                                    <lightning:layoutItem size="6" padding="around-small">
+                                        <aura:if isTrue="{!fld eq 'Check_Amount__c'}">
+                                    		<lightning:input type="text" label="Incentive Amount" value="{!v.checkAmount}" />
+                                        	<aura:set attribute="else">
+                                                <aura:if isTrue="{!fld eq 'Session_Length__c'}">
+                                                	<lightning:input required="true" type="number" label="Session Length (in minutes)" value="{!v.bulkSessionsObject.sessionLength}" />
+                                                	<aura:set attribute="else">
+                                                		<lightning:inputField fieldName="{!fld}" />
+                                    	    		</aura:set>
+                                                </aura:if>
+                                            </aura:set>
+                                        </aura:if>
+                                    </lightning:layoutItem>
+                                </aura:iteration>
+                                
+                                <lightning:layoutItem size="12" padding="around-small">
+                                	<lightning:card title="Session Breaks" iconName="standard:orders">
+                                        <lightning:layout multipleRows="true" verticalAlign="end" horizontalAlign="spread">
+                                            <!-- Sophia Murphy: Updated to be DATE/TIME fields
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:input type="time" name="bstart" label="Start Time" value="{!v.breakTime.startTime}" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:input type="time" name="bend" label="End Time" value="{!v.breakTime.endTime}" />
+                                            </lightning:layoutItem>
+                                            -->
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:input type="DateTime" name="bstartDateTime" label="Start Time" value="{!v.breakTime.startDateTime}" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:input type="DateTime" name="bendDateTime" label="End Time" value="{!v.breakTime.endDateTime}" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:input type="text" name="breakName" label="Break Name" value="{!v.breakTime.name}" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="3" padding="around-small">
+                                                <lightning:button iconName="utility:add" variant="brand" onclick="{!c.addBreak}" label="Add Break" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="12" padding="around-small">
+                                                <aura:iteration items="{!v.bulkSessionsObject.breaks}" var="bt" indexVar="index">
+                                                    <lightning:pill name="{!index}" label="{!bt.name + ' (' + bt.startTimeLabel + ' - ' + bt.endTimeLabel + ')'}" onremove="{!c.deleteBreak}" />
+                                                </aura:iteration>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </lightning:card>
+                                </lightning:layoutItem>
+                                
+                                <!--<lightning:layoutItem size="12" padding="around-small">
+                                	<lightning:card title="Session Details" iconName="standard:orders">
+                                        <lightning:layout multipleRows="true" verticalAlign="end" horizontalAlign="spread">
+                                        	<lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:inputField fieldName="Time_Between_Sessions__c" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:inputField fieldName="Test_Type__c" />
+                                            </lightning:layoutItem>
+                                            <lightning:layoutItem size="6" padding="around-small">
+                                            	<lightning:input required="true" type="number" label="Session Length (in minutes)" value="{!v.bulkSessionsObject.sessionLength}" />
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </lightning:card>
+                                </lightning:layoutItem>-->
+                                <lightning:layoutItem size="12" padding="around-small">
+                                    <lightning:card title="Session Quotas" iconName="standard:orders">
+                        				<lightning:datatable aura:id="dtSessionQuotaWizard" oncellchange="{!c.doCellChange}"
+                                            data="{!v.bulkSessionsObject.masterQuotas}" 
+                                            title="Session Quotas" 
+                                            keyField="Id" 
+                                            columns="{!v.bulkSessionQuotasDataColumns}" 
+                                            class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"/>
+                                    </lightning:card>
+                                </lightning:layoutItem>
+                          </lightning:layout>
+                    </lightning:card>
+                    
+                    <aura:if isTrue="{!v.bShowPreview}">
+                        <lightning:card title="Sessions Preview" iconName="standard:orders">
+                           	<lightning:layout multipleRows="true" verticalAlign="end">
+                                <aura:iteration items="{!v.bulkSessionsObject.scheduledSessions}" var="session">
+                                    <lightning:layoutItem size="6" padding="around-small">
+                                        <lightning:tile label="{!session.Name}">
+                                            <aura:set attribute="media">
+                                                <lightning:icon iconName="standard:orders"/>
+                                            </aura:set>
+                                            <dl class="slds-dl_horizontal">
+                                                <dt class="slds-dl_horizontal__label">
+                                                    <p class="slds-truncate" title="Start Time">Start Time:</p>
+                                                </dt>
+                                                <dd class="slds-dl_horizontal__detail slds-tile__meta">
+													<!-- for CDT (early Nov to mid-March - we want America/Chicago -->
+                                                    <!--<lightning:formattedDateTime timezone="America/Chicago"  timeZoneName="short" value="{!session.Session_Start__c}" hour="numeric" minute="2-digit" month="short" day="numeric" weekday="short" />-->
+                                                    <!-- for CST (mid-March to early Nov) - we want America/El_Salvador -->
+                                                    <lightning:formattedDateTime timezone="America/El_Salvador"  timeZoneName="short" value="{!session.Session_Start__c}" hour="numeric" minute="2-digit" month="short" day="numeric" weekday="short" />
+                                                </dd>
+                                                <dt class="slds-dl_horizontal__label">
+                                                    <p class="slds-truncate" title="Start Time">End Time:</p>
+                                                </dt>
+                                                <dd class="slds-dl_horizontal__detail slds-tile__meta">
+                                                    <!-- for CDT (early Nov to mid-March - we want America/Chicago -->
+                                                    <!--<lightning:formattedDateTime timezone="America/Chicago"  timeZoneName="short" value="{!session.Session_End__c}" hour="numeric" minute="2-digit" month="short" day="numeric" weekday="short" />-->
+                                                    <!-- for CST (mid-March to early Nov) - we want America/El_Salvador -->
+                                                    <lightning:formattedDateTime timezone="America/El_Salvador"  timeZoneName="short" value="{!session.Session_End__c}" hour="numeric" minute="2-digit" month="short" day="numeric" weekday="short" />
+                                                </dd>
+                                            </dl>
+                                        </lightning:tile>
+                                    </lightning:layoutItem>
+                                </aura:iteration>
+                            </lightning:layout>
+                        </lightning:card>
+                    </aura:if>
+                </div>
+                <div class="slds-modal__footer">
+                    <lightning:button class="slds-button slds-button_neutral" onclick="{!c.closeBulkSessionsModal}" label="Close" />
+                	<lightning:button aura:id="createPreview" variant="brand" onclick="{!c.submitCreatePreview}" label="Create Sessions Preview" type="submit" />
+                    <aura:if isTrue="{!v.bShowPreview}">
+                        <lightning:button aura:id="saveSessions" variant="brand" onclick="{!c.saveBulkSessions}" label="Save All Sessions" />
+                    </aura:if>
+                </div>
+            </div>
+                </lightning:recordEditForm>
+            
+        </div>
+        <div class="slds-backdrop slds-backdrop--open">
+        </div>
+    </div>
+	<!--====== MASTER QUOTA WIZARD MODAL ======-->
+	<aura:attribute name="qwData" type="Session__c[]" description="The list of sessions"/>
+	<aura:attribute name="qwDataColumns" type="List" description="The list of columns to be shown"/>
+	<aura:attribute name="smMasterQuotasSortedBy" type="String" description="The column to be sorted"/>
+	<aura:attribute name="smMasterQuotasSortedDirection" type="String" description="The direction for column to be sorted"/>
+    
+    <div aura:id="masterQuotaWizardModal" class="slds slds-hide">
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-modal__container90">
+                <div class="slds-modal__header">
+                    <div align="right">
+                        <lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeQuotaWizardModal}" alternativeText="Close window."/>
+                    </div>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Master Quota Wizard</h2>
+                </div>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					<!--<lightning:card class="slds-card__body slds-card__body_inner" iconName="standard:orders" title="Master Quota Wizard" >
+						-->
+                    <aura:if isTrue="{!v.toastVisible}">
+                        <div aura:id="toastMain" class="snackbar">{!v.toastMsgText}</div>
+                    </aura:if>
+						<lightning:datatable aura:id="dtQuotaWizard"
+								data="{!v.qwData}" 
+								title="Master Quotas" 
+								keyField="Id" 
+								columns="{!v.qwDataColumns}" 
+								onrowaction="{! c.handleQWRowAction }" 
+								onsort="{!c.updateMasterQuotasColumnSorting}" 
+								sortedBy="{!v.smMasterQuotasSortedBy}"
+								sortedDirection="{!v.smMasterQuotasSortedDirection}"
+								onsave="{!c.smSave}"
+								class="slds-table slds-table_bordered slds-max-medium-table_stacked-horizontal"/><!--
+						<table width="100%" Border="0">
+							<tr>
+								<td>
+									<lightning:button label="{!$Label.c.SM_Add_Quota}" onclick="{!c.addNewMQ}" />
+								</td>
+							</tr>
+						</table><br/>
+					</lightning:card>
+                --></div>
+                <div class="slds-modal__footer">
+                    <lightning:button variant="neutral" onclick="{!c.closeQuotaWizardModal}" label="Close" />
+            		<lightning:button variant="brand" label="{!$Label.c.SM_Add_Quota}" onclick="{!c.addNewMQ}" />    
+            	</div>
+            </div>
+        </div>
+        <div class="slds-backdrop slds-backdrop--open">
+        </div>
+    </div>
+    
+    <aura:if isTrue="{!v.displayBulkSaveConfirm}">
+        <div>
+  			<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+    			<div class="slds-modal__container slds-modal__container90">
+      				<header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium slds-hyphenate">Are you sure you want to SAVE ALL SESSIONS?</h2>
+      				</header>
+      				<div class="slds-modal__content slds-p-around_medium modalCenter" id="modal-content-id-1">
+                        <lightning:button onclick="{!c.cancelBulkConfirm}" label="Cancel" />
+                        <lightning:button onclick="{!c.saveBulkSessions}" variant="brand" label="{!'Delete ' + v.childSObjectLabel + 's'}" />
+                    </div>
+    			</div>
+  			</section>
+  			<div class="slds-backdrop slds-backdrop_open"></div>
+		</div>
+    </aura:if>
+    
+    <lightning:overlayLibrary aura:id="popuplib"/>
+
+    <aura:handler event="c:LookupEvent" action="{!c.handleEditLookup}"/>
+    <div aura:id="lookupModal" class="slds slds-hide">
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open slds-modal_small">
+            <div class="slds-modal__container">
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					{!v.lookupComponent}
+                </div>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+    
+</aura:component>

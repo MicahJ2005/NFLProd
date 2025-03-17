@@ -1,0 +1,137 @@
+<apex:page lightningStylesheets="true" standardController="Test_Respondent__c" extensions="TestRespondentScheduleCntrl" showHeader="true" sidebar="true" title="Schedule Respondent">
+
+  <!-- jQuery libraries -->
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/tablesorter.css')}" />
+
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+
+<style>
+    .selectedRow {
+        background-color: #9CE48E !important;
+    }
+</style>
+
+<script>
+    j$ = jQuery.noConflict();
+    j$(document).ready(function() {
+
+        j$( "#dialog-modal" ).dialog({
+          autoOpen: false,
+          height: 150,
+          width: 400,
+          modal: true,
+          resizable: false,
+          draggable: false
+        });
+
+        j$(document).on("change", '.hardSelect', function() {
+            j$(".hardSelect").attr('checked', false);
+            j$(this).attr('checked', true);
+        });
+
+        j$(document).on('click', '.sessionSelect', function() {
+            j$('.rowSelect').removeClass('selectedRow');
+            j$(this).closest('.rowSelect').addClass('selectedRow');
+        });
+
+    });
+
+    function statusShow() {
+      j$( "#dialog-modal" ).dialog( "open" );
+    }
+
+    function statusHide() {
+      j$( "#dialog-modal" ).dialog( "close" );      
+    }
+
+
+  </script>
+
+<apex:form >
+    <apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+    <apex:sectionHeader title="Test Respondents" subtitle="Schedule Respondent in Session" />
+    <apex:pageBlock title="Respondent Information">
+        <apex:pageBlockButtons location="top">
+            <apex:commandButton id="cmdCancel" action="{!cancel}" value="Back to Respondent" />     
+        </apex:pageBlockButtons>
+        <apex:pageBlockSection columns="2">
+            <apex:repeat var="f" value="{!$ObjectType.Test_Respondent__c.FieldSets.ScheduleWizard}">
+                <apex:outputField value="{!Test_Respondent__c[f]}" />   
+            </apex:repeat>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+    <apex:pageBlock title="Choose Session">
+        <apex:pageBlockSection columns="1">
+            <div>
+                Note!  You can only schedule a respondent for a SINGLE session within a test.  If you need to schedule this 
+                respondent for multiple sessions, you will need to clone the main Test Respondent record and then use 
+                this tool to schedule.<br />
+                <br />
+                By using this tool, you will be removing any FPITesters-driven Quota matching logic and forcing the target 
+                respondent in to a session.  This action CANNOT be undone.
+            </div>
+        </apex:pageBlockSection>
+        <br />
+        <apex:pageBlockTable rowClasses="rowSelect" value="{!lstSessions}" var="s">
+            <apex:column headerValue="">
+                <apex:commandButton value="Select" rerender="pbQuotas" styleClass="btn sessionSelect" action="{!fillQuotas}" status="asShowInterstitial">
+                    <apex:param id="idSession" name="idSession" assignTo="{!idSession}" value="{!s.ses.Id}" />
+                    <apex:param id="bolArticulationNeeded" name="bolArticulationNeeded" assignTo="{!bolArticulationNeeded}" value="{!s.ses.IsArticulationNeeded__c}" />
+                </apex:commandButton>
+            </apex:column>
+            <apex:column headerValue="Pre-Selected" style="text-align: center;">
+                <apex:outputText value="*" rendered="{!s.bolSelected}" />
+            </apex:column>
+            <apex:repeat var="f" value="{!$ObjectType.Session__c.FieldSets.RespondentSchedule}">
+                <apex:column headerValue="{!f.label}">
+                    <apex:outputField value="{!s.ses[f]}" />
+                </apex:column>
+            </apex:repeat>
+        </apex:pageBlockTable>
+    </apex:pageBlock>
+    <apex:pageBlock id="pbQuotas" title="Choose Quotas">
+        <apex:pageBlockButtons location="top">
+            <apex:commandButton id="cmdSchedule" action="{!scheduleRespondent}" value="Assign/Schedule Quotas" />
+        </apex:pageBlockButtons>
+        <apex:outputText value="Set Scheduled Status to: " />
+        <apex:selectList value="{!strStatusOverride}" size="1" multiselect="false">
+            <apex:selectOptions value="{!lstStatus}" />
+        </apex:selectList>
+        <br /><br />
+        <apex:pageBlockSection title="Primary Quotas (Choose One)" columns="1">
+            <apex:pageBlockTable id="pbtHard" value="{!lstHard}" var="l">
+                <apex:column headerValue="Select">
+                    <apex:inputCheckbox value="{!l.bolChecked}" styleClass="hardSelect"/>
+                </apex:column>
+                <apex:repeat var="f" value="{!$ObjectType.Session_Quota__c.FieldSets.RespondentSchedule}">
+                    <apex:column headerValue="{!f.label}">
+                        <apex:outputField value="{!l.sq[f]}" />
+                    </apex:column>
+                </apex:repeat>
+            </apex:pageBlockTable>
+        </apex:pageBlockSection>
+        <apex:pageBlockSection title="Secondary (Choose Multiple)" columns="1">
+            <apex:pageBlockTable value="{!lstSoft}" var="l">
+                <apex:column headerValue="Select">
+                    <apex:inputCheckbox value="{!l.bolChecked}" />
+                </apex:column>
+                <apex:repeat var="f" value="{!$ObjectType.Session_Quota__c.FieldSets.RespondentSchedule}">
+                    <apex:column headerValue="{!f.label}">
+                        <apex:outputField value="{!l.sq[f]}" />
+                    </apex:column>
+                </apex:repeat>
+            </apex:pageBlockTable>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:form>
+
+  <div id="dialog-modal" title="Processing Request">
+    <p align="center">
+      Please wait while the system processes your request!
+    </p>
+  </div>
+
+</apex:page>

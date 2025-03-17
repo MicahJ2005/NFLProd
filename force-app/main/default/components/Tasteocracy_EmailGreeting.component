@@ -1,0 +1,8 @@
+<!-- 06.30.2023 - Sophia Murphy (Demand Chain)
+    Used in the tasteocracy emails to display the greeting based on Adult, Child, Pairs type test -->
+    <apex:component access="global" controller="Tasteocracy_EmailComponentController">
+        <apex:attribute name="strUseCase" type="String" assignTo="{!useCase}" required="false" description="Use Case value of the Email Log record" />
+        <apex:attribute name="strTRName" type="String" assignTo="{!trName}" required="false" description="Test Respondent's Name" />
+        <apex:attribute name="strSchedName" type="String" assignTo="{!schedName}" required="false" description="Scheduler's Name" />
+        <apex:outputText value="{!FormattedGreeting}" escape="false" />
+    </apex:component>

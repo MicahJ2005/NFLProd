@@ -1,0 +1,15 @@
+.THIS {
+}
+
+.THIS .leftPaddingClass {
+    padding-left: 2rem;
+}
+ 
+.THIS .pillSize{
+    width:100%;
+}
+
+/*Hide the cancel and save buttons on the lookup.*/
+.THIS .slds-align_absolute-center{
+    display: none;
+}

@@ -1,0 +1,60 @@
+<apex:component access="global">
+    <apex:attribute name="showReferral" type="Boolean" required="false" description="Whether or not we should include the Referral button" />
+
+    <table width="600">
+        <tr><td width="600">
+            <hr style="border: 2px solid #003882;" />
+            Thank you for being a Tasteocracy member. We look forward to seeing you at a test soon!
+    </td></tr></table>
+
+    <apex:outputPanel rendered="{!IF(showReferral, 'true', 'false')}" layout="none" >
+      <style>
+        .blueTO {
+            background-color: #0072bc;
+        }
+        .btn {
+            border: 0 !important;
+            border-radius: 1.5em !important;
+            min-width: 11em !important;
+            display: inline=block;
+            font-family: 'Roboto', sans-serif;
+            padding: 1em 0.875em;
+            text-decoration: none;
+            font-weight: 500;
+            line-height: 1.0625em;
+            color: #fff;
+            white-space: nowrap;
+            text-align: center;
+        }
+        a.button button.btn {
+            box-shadow: none;
+            min-height: 3.4em;
+            font-size: 1.085em;
+            letter-spacing: .07em;
+        }
+      </style>
+      <table width="600">
+        <tr><td width="600" align="center">
+            <a href="https://www.tasteocracy.com/my-account/refer-a-friend-form" class="button">
+                <button class="btn blueTO" style="width:12em !important;">Refer a Friend Here</button>
+            </a>
+       </td></tr></table>
+    </apex:outputPanel>
+
+    <table width="600">
+        <tr><td width="600">
+            Like your Facebook page for additional notices about testing opportunities<br/>
+                <a href="https://www.facebook.com/tasteocracy">Tasteocracy MN</a> | 
+                <a href="https://www.facebook.com/TasteocracyCA">Tasteocracy CA</a>
+            <br/>
+                Twitter: @tasteocracymn &amp; @tasteocracyca
+            <br/><br/>
+                Customer Care is available:<br/>
+                <ul>
+                    <li>By phone at (877)-898-6161</li>
+                    <li>By Live Chat at <a href="www.tasteocracy.com">www.tasteocracy.com</a></li>
+                    <li>By email at <a href="mailto:info@tasteocracy.com">info@tasteocracy.com</a></li>
+            	</ul>
+                Customer Care hours are: 7am-7pm (Pacific Standard Time) / 9am-9pm (Central Standard Time) Monday through Friday<br/>
+       </td></tr></table>
+</apex:component>

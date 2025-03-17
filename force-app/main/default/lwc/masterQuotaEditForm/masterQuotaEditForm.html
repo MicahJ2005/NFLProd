@@ -1,0 +1,53 @@
+<template>
+    <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" class="slds-modal slds-fade-in-open slds-modal_large">
+        <div class="slds-modal__container">
+            <lightning-button-icon
+                class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                icon-name="utility:close"
+                alternative-text="Close"
+                title="Close"
+                onclick={close}
+            ></lightning-button-icon>
+            <div class="slds-modal__header">
+                <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate">New Record</h1>
+            </div>
+            <div if:true={spinner} class="slds-spinner_inline spinner-padding">
+                <lightning-spinner variant="brand" alternative-text="Saving Record" size="medium"> </lightning-spinner>
+            </div>
+            <div class="slds-modal__content slds-var-p-around_medium" id="modal-content-id-1">
+                <lightning-record-edit-form object-api-name="Quota__c" onsubmit={onSubmitHandler} onsuccess={onSuccessHandler} onerror={onErrorHandler} density="compact">
+                    <lightning-accordion allow-multiple-sections-open active-section-name="Information">
+                        <lightning-accordion-section label="Information" name="Information">
+                            <div class="slds-grid">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Quota_Summary__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="Beacon_Condition__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="Minimum_Respondents__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="Maximum_Respondents__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="Total_Scheduled__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="MQ_Total_Pre_qualified_Respondents__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="CurrencyIsoCode"> </lightning-input-field>
+                                    <lightning-input-field field-name="Tested_Goal__c"> </lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Related_Test__c" value={related}> </lightning-input-field>
+                                    <lightning-input-field field-name="IsOpen__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="IsScheduleEnabled__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="IsTrackingOnly__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="Fill_Weighting__c"> </lightning-input-field>
+                                    <lightning-input-field field-name="MQG__c"> </lightning-input-field>
+                                </div>
+                            </div>
+                        </lightning-accordion-section>
+                    </lightning-accordion>
+                </lightning-record-edit-form>
+            </div>
+            <div class="slds-modal__footer">
+                <lightning-button type="submit" variant="brand" label="Create" class="slds-var-m-top_medium, slds-var-m-left_x-small" onclick={onSubmitClick}>
+                </lightning-button>
+                <lightning-button label="Cancel" class="slds-var-m-top_medium, slds-var-m-left_x-small" onclick={close}> </lightning-button>
+            </div>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+</template>

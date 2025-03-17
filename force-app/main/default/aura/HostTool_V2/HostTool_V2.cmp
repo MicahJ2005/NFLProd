@@ -1,0 +1,513 @@
+<!--
+	09.20.2023	Sophia Murphy (Demand Chain)
+				Removed the "auto-refresh respondents" dropdown; wasn't working
+				Added in a single "refresh" button
+	11.16.2023	Sophia Murphy (Demand Chain)
+				Showing additional stats; other updates to improve usability
+-->
+<aura:component implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome" access="global" controller="HostToolLightning_V2">
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+	<aura:handler name="change" value="{!v.successMessages}" action="{!c.clearMessageDelayed}"/>
+	<aura:handler name="change" value="{!v.modalOpen}" action="{!c.handleModalChange}"/>
+	<aura:attribute name="tests" type="Master_Test__c[]"/>
+	<aura:attribute name="sessions" type="HostToolLightning_V2.hClsSession[]"/>
+	<aura:attribute name="sessionDisplays" type="HostToolLightning_V2.hClsSession[]"/>
+	<aura:attribute name="Dashboard" type="String[]"/>
+	<aura:attribute name="DashboardMT" type="String[]"/>
+	<!-- Commented out 08.20.2024 <aura:attribute name="TestedGoals" type="HostToolLightning_V2.QuotaData[]"/>-->
+	<aura:attribute name="MasterTestId" type="String"/>
+	<aura:attribute name="SessionId" type="String"/>
+	<aura:attribute name="SearchRespondent" type="String"/>
+	<aura:attribute name="Respondent" type="HostToolLightning_V2.hClsRespondent"/>
+	<aura:attribute name="RespondentName" type="String"/>
+	<aura:attribute name="RespondentContactId" type="String"/>
+	<aura:attribute name="RespondentSession" type="Session__c"/>
+	<aura:attribute name="selectedView" type="String"/>
+	<aura:attribute name="successMessages" type="String[]"/>
+	<aura:attribute name="comms" type="HostToolLightning_V2.hClsCommunications"/>
+	<aura:attribute name="refreshTime" type="String"/>
+	<aura:attribute name="selectedColSort" type="String" default="Name"/>
+	<aura:attribute name="arrowAsc" type="Boolean" default="true"/>
+	<aura:attribute name="respondentList" type="HostToolLightning_V2.hClsRespondent[]"/>
+	<aura:attribute name="modalOpen" type="Boolean"/>
+	<aura:attribute name="compare1" type="Integer"/>
+	<aura:attribute name="compare2" type="Integer"/>
+
+	<div class="slds" width="320px">
+		<div aura:id="mySpinner" class="slds-hide">
+			<div class="slds-spinner_container">
+				<div class="slds-spinner--brand slds-spinner slds-spinner--large" role="alert">
+					<span class="slds-assistive-text">Loading</span>
+					<div class="slds-spinner__dot-a"></div>
+					<div class="slds-spinner__dot-b"></div>
+				</div>
+			</div>
+		</div>
+		<aura:renderIf isTrue="{!v.successMessages.length > 0}">
+			<div class="toast">
+				<aura:iteration items="{!v.successMessages}" var="message">
+					<div class="slds-notify_container slds-is-relative">
+						<div class="slds-notify slds-notify_toast slds-theme_success" role="status">
+						<span class="slds-assistive-text">success</span>
+						<span class="slds-icon_container slds-icon-utility-success slds-m-right_small slds-no-flex slds-align-top" title="Description of icon when needed">
+							<!--<svg class="slds-icon slds-icon_small" aria-hidden="true">
+							<use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#success"></use>
+							</svg>-->
+							<lightning:icon iconName="utility:success" variant="inverse"/>
+						</span>
+						<div class="slds-notify__content">
+							<h2 class="slds-text-heading_small ">{!message}</h2>
+						</div>
+						<div class="slds-notify__close">
+							<button class="slds-button slds-button_icon slds-button_icon-inverse" onclick="{!c.clearMessage}" title="Close">
+								<lightning:icon iconName="utility:close" variant="inverse"/>
+							<!--<svg class="slds-button__icon slds-button__icon_large" aria-hidden="true">
+								<use xlink:href="/assets/icons/utility-sprite/svg/symbols.svg#close"></use>
+							</svg>-->
+							<span class="slds-assistive-text">Close</span>
+							</button>
+						</div>
+						</div>
+					</div>
+				</aura:iteration>
+			</div>
+			
+		</aura:renderIf>
+		<div class="slds-grid slds-wrap slds-grid--pull-padded">
+			<div class="slds-col--padded slds-size--3-of-6 slds-p-bottom--large">
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<div class="slds-form-element slds-lookup" data-select="single" data-scope="single">
+						<lightning:select label="Choose a Test: " name="MasterTest" onchange="{!c.refreshSession}" value="{!v.MasterTestId}">
+							<option value="">--- Choose a Test ---</option>
+							<aura:iteration items="{!v.tests}" var="t">
+								<option value="{!t.Id}">{!t.Opportunity_Name__c}</option>
+							</aura:iteration>
+						</lightning:select>
+						<lightning:select label="Choose a Session: " name="session" onchange="{!c.refreshSessionDisplay}" value="{!v.SessionId}">
+							<option value="">--- Choose a Session ---</option>
+							<aura:iteration items="{!v.sessions}" var="s">
+								<option value="{!s.ses.Id}">{!s.ses.Name} - {!s.ses.Testing_Location__r.Name} -  {!s.ses.Session_Length__c}  mins</option>
+							</aura:iteration>
+						</lightning:select>
+						<lightning:select label="Choose you View: " name="ViewTypeSelect" value="{!v.selectedView}" onchange="{!c.listviewchange}">
+							<option value="Session View">Session View</option>
+							<option value="List View">List View</option>
+						</lightning:select>
+						<div> 
+							<br/>
+							<ui:inputText label="Search for Respondent: " value="{!v.SearchRespondent}"/>
+							<lightning:button label="Search" onclick="{!c.search}"/>
+							<lightning:button label="Clear" onclick="{!c.clearSearch}"/>
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+							<lightning:button label="Refresh" onclick="{!c.doRefresh}" class="slds-float_right"/>
+						</div>
+						<!--<div>
+							<lightning:select label="Auto-Refresh Respondents: " name="autoRefresh" onchange="{!c.autoRefreshUpdate}" value="{!v.refreshTime}">
+								<option value="None">No Auto-Refresh</option>
+								<option value="1">Auto-Refresh every 1 min</option>
+								<option value="3">Auto-Refresh every 3 min</option>
+								<option value="5">Auto-Refresh every 5 min</option>
+							</lightning:select>
+							
+						</div>-->
+					</div>
+				</div>
+			</div>
+			<div class="slds-col--padded slds-size--3-of-6 slds-p-bottom--large slds-theme--shade">
+				<div class="slds-grid slds-wrap slds-grid--pull-padded">
+					<div class="slds-p-horizontal--small slds-size--1-of-1 slds-text-align--center">
+						<p style="font-size:18px"><b>Progress Tracker</b>  <!--<lightning:button label="Refresh" onclick="{!c.doRefresh}" class="slds-float_right"/>--></p>
+					</div>
+					<div class="slds-p-horizontal--small slds-size--1-of-4">
+						<b>Counts per Tested Status</b><br/>
+						<i>Session Specific</i>
+						<aura:iteration items="{!v.Dashboard}" var="db">
+							<div class="slds-p-horizontal--small slds-size--1-of-1">
+								{!db}
+							</div>
+						</aura:iteration>
+					</div>
+					<div class="slds-p-horizontal--small slds-size--1-of-4">
+						<b>Counts per Tested Status</b><br/>
+						<i>NOT Session Specific</i>
+						<aura:iteration items="{!v.DashboardMT}" var="db">
+							<div class="slds-p-horizontal--small slds-size--1-of-1">
+								{!db}
+							</div>
+						</aura:iteration>
+					</div>
+					<!-- 08.20.2024 - Commented out, causing the browser to crash - too slow 
+					 <div class="slds-p-horizontal- -small slds-size- -2-of-4">
+						<b>Tested Goals per MQ</b><br/>
+						<i>NOT Session Specific</i>
+						<aura:if isTrue="{!v.TestedGoals.length > 0}">
+							<table border="1">
+								<thead>
+									<tr>
+										<th></th>
+										<th>Goal</th>
+										<th>Tested</th>
+									</tr>
+								</thead>
+								<tbody>
+									<aura:iteration items="{!v.TestedGoals}" var="quota">
+										<tr style="{!'color: ' + quota.rowColor}" >
+											<td>{!quota.condition}</td>
+											<td>{!quota.goal}</td>
+											<td>{!quota.tested}</td>
+										</tr>
+									</aura:iteration>
+								</tbody>
+							</table>
+						</aura:if>
+						
+					</div>-->
+				</div>
+				<br/>
+				<div class="slds-text-align--center">
+					<p style="font-size:18px"><b>Communications</b></p>
+				</div>
+				<div>
+					<b>Test Communications: </b>{!v.comms.mComm}<br/>
+					<!--<b>Session Communications: </b>{!v.comms.sComm}<br/>-->
+					<b>Master Test’s Survey Research Analyst – QRE: </b>{!v.comms.surveryResearchAnalystQRE}
+				</div>
+			</div>
+			<br/>
+			<div aura:id="SessionDiv">
+				<aura:iteration items="{!v.sessionDisplays}" var="swrapper">
+					<span>
+						<div class="slds-col--padded slds-size--1-of-1 slds-p-bottom--large	">
+							<div class="slds-grid slds-box sldx-box--small slds-theme--info">
+								<div class="slds-size--5-of-6">
+									<p style="font-size:24px"><b>{!swrapper.ses.Name}</b></p> <b> When: </b> <ui:outputDateTime value="{!swrapper.ses.Session_Start__c}" format="hh:mm a"/> to <ui:outputDateTime value="{!swrapper.ses.Session_End__c}" format="hh:mm a"/> <b> Where: </b> {!swrapper.ses.Testing_Location__r.Name} <b> How Many: </b> Goal={!swrapper.ses.Recruits_Per_Session__c}, Scheduled={!swrapper.ses.Scheduled_Respondents__c}  <b> Type: </b> {!swrapper.ses.Test_Type__c} <b> Notes: </b> {!swrapper.ses.Recruiting_Notes__c} <b> Beacon Instructions: </b> {!swrapper.ses.Special_Instructions_for_Respondents__c}
+								</div>
+								<div class="slds-size--1-of-6">
+									<div class="slds-box sldx-box--small slds-text-align--center">
+										Mark as Complete<br />
+										<div class="slds-icon_container slds-icon-action-approval slds-icon_container--circle" onclick="{!c.emailRequest}" data-type="done" data-whatid="{!swrapper.ses.Id}">
+											<lightning:icon iconName="action:approval" size="small" alternativeText="Done Checking In"/>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="slds-grid slds-wrap">
+							<aura:iteration items="{!swrapper.lstTR}" var="trwrapper" indexVar="idx">
+								<div class="slds-size--1-of-6">
+									<div class="slds-box slds-box--x-small slds-m-around--x-small" style="{!trwrapper.cc}" onclick="{!c.openModal}" data-respondentID="{!trwrapper.tr.Id}" data-sessionID="{!swrapper.ses.Id}">
+										<div class="slds-tile slds-tile--board" style="slds-theme--shade; background-color: #d8dde6; padding: .5rem;">
+											<p class="slds-text-heading--medium"><a href="javascript:void(0);">{!trwrapper.tr.Respondent__r.Name}</a></p>
+											<div class="slds-tile__detail slds-text-body--small">
+												<p class="slds-truncate">Pair Testing: {!trwrapper.strPairStyle}</p>
+												<p class="slds-truncate">PID: {!trwrapper.tr.Respondent__r.PID__c}</p>
+												<p class="slds-truncate">Gender: {!trwrapper.tr.Respondent__r.Gender__c}</p>
+												<p class="slds-truncate">Respondent Number: {!trwrapper.tr.Respondent_Number__c}</p>
+												<p class="slds-truncate" style="{!trwrapper.chkc}">Check Number: {!trwrapper.tr.Check_Number__c}
+													<aura:if isTrue="{!trwrapper.tr.Void__c}">
+														<span style="color:red;">  VOIDED</span>
+													</aura:if>
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</aura:iteration>
+						</div>
+					</span>
+				</aura:iteration>
+			</div>
+		</div>
+		<aura:if isTrue="{!v.selectedView == 'List View'}">
+			<div aura:id="ListDiv">
+				<table class="slds-table slds-table--bordered slds-table--cell-buffer">
+					<thead>
+						<tr class="slds-text-title--caps">
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Session_Name__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Session">Session</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Session_Name__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Session_Name__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent_Number__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Resp#">Resp#</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent_Number__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent_Number__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Tested_Status__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Status">Status</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Tested_Status__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Tested_Status__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.FirstName">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="First Name">First Name</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.FirstName') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.FirstName') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.LastName">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Last Name">Last Name</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.LastName') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.LastName') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.PID__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="PID">PID</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.PID__c') }">
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.PID__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.Gender__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Gender">Gender</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.Gender__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.Gender__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.Age__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Age">Age</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.Age__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.Age__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Respondent__r.IVRPhone__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Phone">Phone</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Respondent__r.IVRPhone__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Respondent__r.IVRPhone__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="strPairStyle">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Pair Testing">Pair Testing</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'strPairStyle') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'strPairStyle') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Donation_Amount_Per_Event__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Org Amount">Org Amount</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Donation_Amount_Per_Event__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Donation_Amount_Per_Event__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Organization__r.Name">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Org">Org</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Organization__r.Name') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Organization__r.Name') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th class="slds-is-sortable slds-text-title--caps" scope="col" onclick="{!c.sortData}" data-fldName="tr.Check_Number__c">
+								<a href="javascript:void(0);" class="slds-th__action slds-text-link--reset">
+									<span class="slds-assistive-text">Sort</span>
+									<span class="slds-truncate" title="Check">Check</span>
+									<aura:if isTrue="{! and(v.arrowAsc, v.selectedColSort == 'tr.Check_Number__c') }"> 
+										<lightning:icon iconName="utility:up" size="xx-small"/>
+									</aura:if>  
+									<aura:if isTrue="{! and(v.arrowAsc == false, v.selectedColSort == 'tr.Check_Number__c') }">
+										<lightning:icon iconName="utility:down" size="xx-small"/>
+									</aura:if>
+								</a>
+							</th>
+							<th scope="col">
+								
+							</th>
+							<th scope="col">
+								
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<aura:iteration items="{!v.respondentList}" var="lstResp">
+							<tr onclick="{!c.openModal}" data-respondentID="{!lstResp.tr.Id}" data-sessionID="{!lstResp.tr.Session_ID__c}" class="{!AND(lstResp.allFull, lstResp.tr.Tested_Status__c == 'Pending') ? 'isFull' : ''}">
+									<th scope="row" data-label="Session">
+										<div class="slds-truncate">
+											{!lstResp.tr.Session_Name__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Resp#">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent_Number__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Status" style="{!lstResp.cc}">
+										<div class="slds-truncate">
+											{!lstResp.tr.Tested_Status__c}
+										</div>
+									</th>
+									<th scope="row" data-label="First Name">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.FirstName}
+										</div>
+									</th>
+									<th scope="row" data-label="Last Name">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.LastName}
+										</div>
+									</th>
+									<th scope="row" data-label="PID">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.PID__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Gender">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.Gender__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Age">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.Age__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Phone">
+										<div class="slds-truncate">
+											{!lstResp.tr.Respondent__r.IVRPhone__c}
+										</div>
+									</th>
+									<th scope="row" data-label="pair">
+										<div class="slds-truncate">
+											{!lstResp.strPairStyle}
+										</div>
+									</th>
+									<th scope="row" data-label="Org Amount">
+										<div class="slds-truncate">
+											{!lstResp.tr.Donation_Amount_Per_Event__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Org">
+										<div class="slds-truncate">
+											{!lstResp.tr.Organization__r.Name}
+										</div>
+									</th>
+									<th scope="row" data-label="Check" style="{!lstResp.chkc}">
+										<div class="slds-truncate">
+											{!lstResp.tr.Check_Number__c} / {!lstResp.tr.Check_Amount__c}
+										</div>
+									</th>
+									<th scope="row" data-label="Rescheduled">
+										<aura:if isTrue="{!lstResp.tr.Session_Date_Old__c}">
+											<div style="position:relative">
+												<div name="{!'resc-' + lstResp.tr.Id}" onmouseover="{!c.toggleToolTip}" onmouseout="{!c.toggleToolTip}">
+													<lightning:icon iconName="utility:date_time" alternativeText="Rescheduled" title="rescheduled" variant="warning" size="x-small"/>
+												</div>
+												<div id="{!'resc-' + lstResp.tr.Id}" class="slds-popover slds-popover_tooltip slds-nubbin_bottom-right slds-hide" role="tooltip" style="position:absolute;top:-50px;left:-121px">
+												  <div class="slds-popover__body">
+													<lightning:formattedDateTime value="{!lstResp.tr.Session_Date_Old__c}" year="numeric" month="numeric" day="numeric" hour="2-digit"
+                                 						minute="2-digit" timeZoneName="short" hour12="true"/>
+												  </div>
+												</div>
+											  </div>
+											
+										</aura:if>									
+									</th>
+									<th scope="row" data-label="Rescheduled">
+										<aura:if isTrue="{!lstResp.tr.Respondent__r.Site_Notes__c}">
+											<lightning:helptext
+												content="{!lstResp.tr.Respondent__r.Site_Notes__c}"
+												iconName="utility:note"
+											/>
+											
+										</aura:if>									
+									</th>
+								</tr>
+						</aura:iteration> 
+					</tbody>
+				</table>
+			</div>
+		</aura:if>
+		<!-- begin modals -->
+
+		<!-- Respondent Modal -->
+		<!--<div aura:id="RespondentModal" class="slds-hide">-->
+		<aura:renderIf isTrue="{!v.modalOpen}">
+			<div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal--large" aria-labelledby="header43">
+				<div class="slds-modal__container">
+					<div class="slds-modal__header">
+						<div align="right">
+							<lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeModal}" alternativeText="Close window."/>
+						</div>
+						<h2 id="header43" class="slds-text-heading--medium"><a href="{!'/' + v.RespondentContactId}" target="_blank">{!v.RespondentName}</a></h2>
+					</div>
+					<div class="slds-modal__content">
+						<c:RespondentCard_V2 modalOpen="{!v.modalOpen}" successMessages="{!v.successMessages}" Respondent="{!v.Respondent}" Session="{!v.RespondentSession}" MasterTestId="{!v.MasterTestId}" />
+					</div>
+				</div>
+			</div>
+			<div class="slds-backdrop slds-backdrop--open">
+			</div>
+		</aura:renderIf>
+		<!--</div>-->
+
+	</div>
+</aura:component>

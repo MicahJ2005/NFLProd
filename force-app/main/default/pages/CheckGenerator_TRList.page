@@ -1,0 +1,38 @@
+<!-- 
+Uses a standardSetController so it can be called from a list of Test Respondent records
+Allows finance to check a number of TR records and reprint just those checks.
+
+12.01.2020  Sophia Murphy (Demand Chain)
+            Initial Creation
+-->
+<apex:page recordSetVar="trList" lightningStylesheets="true" standardController="Test_Respondent__c" extensions="CheckGenerator_TRListController">
+    <apex:form >
+   
+        <apex:pageBlock >
+            <apex:pageBlockSection columns="1">
+                <apex:pageBlockSectionItem >
+                    Re-Printing Checks for the Following Test Respondents:
+                    <ul>
+                        <li>If there is no Check Number; the check will NOT be printed.</li>
+                        <li>If there is no Check Amount; the check will NOT be printed.</li>
+                        <li>Only 99 checks will be printed; limited to 33 pages.</li>
+                        <li>Please only click the "Re-Print" button once; Be patient as the PDF generates.</li>
+                        <li>Watch for pop-up blockers that may be preventing the PDF from loading.</li>
+                    </ul>
+                </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>
+            <apex:pageBlockTable value="{!trList}" var="tr">
+                <apex:column value="{!tr.Name}"/>
+                <apex:column value="{!tr.Respondent__c}"/>x`
+                <apex:column value="{!tr.Check_Number__c}"/>
+                <apex:column value="{!tr.Check_Amount__c}"/>
+                <apex:column value="{!tr.Check_Printed_Date__c}"/>
+             </apex:pageBlockTable>
+        
+         <apex:pageBlockButtons location="both">
+            <apex:commandButton action="{!runValtiraChecks}" value="Re-Print"/>
+            <apex:commandButton action="{!cancel}" value="Cancel"/>
+         </apex:pageBlockButtons>
+        </apex:pageBlock>
+        </apex:form>    
+</apex:page>

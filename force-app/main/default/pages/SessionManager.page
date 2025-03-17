@@ -1,0 +1,139 @@
+<apex:page showHeader="true" sidebar="true" standardController="Master_Test__c" extensions="SessionManagerController" title="Session Manager">
+
+  <!-- jQuery libraries -->
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+  <apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/tablesorter.css')}" />
+
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+  <apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+
+<style>
+	.selectedRow {
+		background-color: #9CE48E !important;
+	}
+</style>
+
+<script>
+    j$ = jQuery.noConflict();
+    j$(document).ready(function() {
+
+        j$( "#dialog-modal" ).dialog({
+          autoOpen: false,
+          height: 150,
+          width: 400,
+          modal: true,
+          resizable: false,
+          draggable: false
+        });
+
+        j$(document).on('click', '.sessionSelect', function() {
+        	j$('.rowSelect').removeClass('selectedRow');
+        	j$(this).closest('.rowSelect').addClass('selectedRow');
+        });
+
+        j$(document).on('click', '.sessionBefore, .sessionAfter', function() {
+        	j$('.rowSelect').removeClass('selectedRow');
+        });
+
+    });
+
+    function statusShow() {
+      j$( "#dialog-modal" ).dialog( "open" );
+    }
+
+    function statusHide() {
+      j$( "#dialog-modal" ).dialog( "close" );      
+    }
+
+
+  </script>
+
+<apex:form >
+	<apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+	<apex:sectionHeader title="Master Test" subtitle="Session Manager" />
+	<apex:pageBlock id="pbMain" title="Session Creator">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton id="cmdCancel" value="Return to Test" action="{!cancel}" />
+			<apex:commandButton id="cmdNew" value="New Session" action="{!instanciateNewSession}" rerender="pbMain, pbSessions" status="asShowInterstitial"/>
+			<apex:commandButton id="cmdSave" value="Save Session" action="{!saveSession}" rerender="pbMain, pbSessions" status="asShowInterstitial"/>
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection title="Session Information">
+			<apex:repeat value="{!$ObjectType.Session__c.FieldSets.Wizard}" var="fs">
+                <apex:inputfield value="{!seNew[fs]}" />
+            </apex:repeat>
+		</apex:pageBlockSection>
+		<apex:pageBlockSection title="Quota Information" columns="1">
+			<apex:pageBlockTable value="{!lstMasterQuotas}" var="q">
+				<apex:column headerValue="Include" width="50px">
+					<apex:inputCheckbox value="{!q.bolChecked}" disabled="{!q.bolScreened}" />
+				</apex:column>
+				<apex:column headerValue="Scr/Sch" width="50px">
+					<apex:outputText value="{!q.sqQuota.Screened_Respondents__c} / {!q.sqQuota.Scheduled_Respondents__c}" rendered="{!q.sqQuota != NULL}"/>
+				</apex:column>
+				<apex:column headerValue="Quota Summary">
+					<apex:outputLink value="/{!q.mtQuota.Id}">{!q.mtQuota.Quota_Summary__c}</apex:outputLink>
+				</apex:column>
+				<apex:column value="{!q.mtQuota.Beacon_Condition__c}" />
+				<apex:column headerValue="Session Quota Min #" width="50px">
+					<apex:inputText value="{!q.mtQuota.Minimum_Respondents__c}" rendered="{!q.sqQuota == NULL}"/>
+					<apex:inputField value="{!q.sqQuota.Minimum_Respondents__c}" rendered="{!q.sqQuota != NULL}"/>
+				</apex:column>
+				<apex:column headerValue="Session Quota Max #" width="50px">
+					<apex:inputText value="{!q.mtQuota.Maximum_Respondents__c}" rendered="{!q.sqQuota == NULL}"/>
+					<apex:inputField value="{!q.sqQuota.Maximum_Respondents__c}" rendered="{!q.sqQuota != NULL}"/>
+				</apex:column>
+				<apex:column headerValue="Open to Recruit?" width="50px">
+					<apex:inputCheckbox value="{!q.bolIsOpen}" rendered="{!q.sqQuota == NULL}"/>
+					<apex:inputField value="{!q.sqQuota.IsOpen__c}" rendered="{!q.sqQuota != NULL}"/>
+				</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+	<apex:pageBlock id="pbSessions" title="Existing Sessions">
+		<apex:pageBlockButtons location="top">
+			
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection columns="1">
+			<apex:pageBlockTable rowClasses="rowSelect" value="{!lstSessions}" var="s">
+				<apex:column headerValue="Actions">
+					<apex:commandButton value="Before" styleClass="sessionBefore" action="{!resetSession}" rerender="pbMain" status="asShowInterstitial">
+						<apex:param name="idSessionTemplate" assignTo="{!idSessionTemplate}" value="{!s.Id}" />
+						<apex:param name="bolCreateBefore" assignTo="{!bolCreateBefore}" value="true" />
+					</apex:commandButton>
+					<apex:commandButton value="After" styleClass="sessionAfter" action="{!resetSession}" rerender="pbMain" status="asShowInterstitial">
+						<apex:param name="idSessionTemplate" assignTo="{!idSessionTemplate}" value="{!s.Id}" />
+						<apex:param name="bolCreateBefore" assignTo="{!bolCreateBefore}" value="false" />
+					</apex:commandButton>
+					<apex:commandButton value="Edit" styleClass="sessionSelect" action="{!resetSession}" rerender="pbMain" status="asShowInterstitial">
+						<apex:param name="idSessionEdit" assignTo="{!idSessionEdit}" value="{!s.Id}" />
+					</apex:commandButton>
+				</apex:column>
+				<apex:column headerValue="Session Name" onClick="afEditSession('{!s.Id}')">
+					<apex:outputLink value="/{!s.Id}">{!s.Name}</apex:outputLink>
+				</apex:column>
+				<apex:column value="{!s.Session_Start__c}" onClick="afEditSession('{!s.Id}')"/>
+				<apex:column value="{!s.Session_End__c}" onClick="afEditSession('{!s.Id}')"/>
+				<apex:column value="{!s.Research_Type__c}" onClick="afEditSession('{!s.Id}')"/>
+				<apex:column value="{!s.Test_Type__c}" onClick="afEditSession('{!s.Id}')"/>
+				<apex:column headerValue="Testing Location" onClick="afEditSession('{!s.Id}')">
+					<apex:outputField value="{!s.Testing_Location__r.Name}" />
+				</apex:column>
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+
+	<apex:actionFunction name="afEditSession" id="afEditSession" action="{!resetSession}" rerender="pbMain" status="asShowInterstitial">
+		<apex:param name="idSessionEdit" assignTo="{!idSessionEdit}" value="" />
+	</apex:actionFunction>
+
+</apex:form>
+
+  <div id="dialog-modal" title="Processing Request">
+    <p align="center">
+      Please wait while the system processes your request!
+    </p>
+  </div>
+
+</apex:page>

@@ -1,0 +1,119 @@
+<apex:page standardController="Video_Access_Token__c" sidebar="false" showHeader="false" cache="false">
+
+    <script src="http://vlt-concepts.s3.amazonaws.com/fpi/AC_RunActiveContent.js" language="javascript"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js" language="javascript"></script>
+    <script src="http://cdn.jquerytools.org/1.2.6/all/jquery.tools.min.js" language="javascript"></script>
+    <script src="http://releases.flowplayer.org/js/flowplayer-3.2.12.min.js" language="javascript"></script>
+    <script language="javascript">
+        $(document).ready(
+            function() {
+                $f("player", "http://releases.flowplayer.org/swf/flowplayer-3.2.16.swf", 
+                    { 
+                        clip: {
+                            url: 'food-perspectives',
+                            provider: 'rtmp',
+                            live: true
+                        },
+                        plugins: {
+                            rtmp: {
+                                url: "http://releases.flowplayer.org/swf/flowplayer.rtmp-3.2.12.swf",
+                                netConnectionUrl: 'rtmp://184.73.200.25/live'
+                            }
+                        }
+                    });
+            });
+    </script> 
+
+    <style>
+        body
+        {
+            padding:15px;
+        }
+        .logo
+        {
+            margin-bottom:10px;
+        }        
+        .pbSubheader
+        {
+          background-color: #171C8F !important;
+        }
+    </style>
+
+    <apex:pageBlock >
+        <img src="http://www.foodperspectives.com/media/image/fpibadge.png" class="logo" />
+        <apex:pageBlockSection title="Video Streaming Access" >     
+            <apex:outputField value="{!Video_Access_Token__c.Token_Start__c}" / >
+            <apex:outputField value="{!Video_Access_Token__c.Token_Expiration__c}" / >
+<!--             <apex:outputText value="{!Video_Access_Token__c.Contact__r.Name} " label="Contact"></apex:outputText>
+            <apex:outputText value="{!Video_Access_Token__c.Contact__r.Account.Name} " label="Company"></apex:outputText> -->
+<!--
+DEBUGGING CODE IF YOU NEED IT
+<apex:outputText value="{!NOW()}" label="NOW"></apex:outputText>            
+<apex:outputText value="{!ISBLANK($CurrentPage.parameters.id)} " label="ISBLANK"></apex:outputText>
+<apex:outputText value="{!IF(ISBLANK($CurrentPage.parameters.id), true, false)} " label="IF ISBLANK"></apex:outputText>
+<apex:outputText value="{!IF(Video_Access_Token__c.Access_Start__c <= NOW(), true, false)} " label="START?"></apex:outputText>
+<apex:outputText value="{!IF(Video_Access_Token__c.Access_End__c > NOW(), true, false)} " label="END?"></apex:outputText>
+<apex:outputText value="{!IF(ISBLANK($CurrentPage.parameters.id) == false && Video_Access_Token__c.Access_Start__c <= NOW() && Video_Access_Token__c.Access_End__c > NOW(), true, false)} " label="Allowed to Watch?"></apex:outputText>
+-->
+        </apex:pageBlockSection>
+        <apex:pageBlockSection rendered="{!IF(ISBLANK($CurrentPage.parameters.id) == false && Video_Access_Token__c.Token_Start__c <= NOW() && Video_Access_Token__c.Token_Expiration__c > NOW(), true, false)}" title="Video">
+                    <center>
+                    <table width="100%">
+                        <tr>
+                            <td align="center" width="50%">
+                                <div id="player" style="display:block;width:425px;height:300px;margin:10px auto"><!-- player container-->                                   
+                                </div>   
+                            </td>
+                            <td align="center" width="50%">    
+                                <script language="javascript">
+                                    if (AC_FL_RunContent == 0) {
+                                        alert("This page requires AC_RunActiveContent.js.");
+                                    } else {
+                                        AC_FL_RunContent(
+                                            'codebase', 'http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,0,0',
+                                            'width', '550',
+                                            'height', '400',
+                                            'src', 'https://vlt-concepts.s3.amazonaws.com/fpi/textchat3.swf',
+                                            'quality', 'high',
+                                            'pluginspage', 'http://www.macromedia.com/go/getflashplayer',
+                                            'align', 'middle',
+                                            'play', 'true',
+                                            'loop', 'true',
+                                            'scale', 'showall',
+                                            'wmode', 'window',
+                                            'devicefont', 'false',
+                                            'id', 'textchat',
+                                            'bgcolor', '#ffffff',
+                                            'name', 'textchat',
+                                            'menu', 'true',
+                                            'allowFullScreen', 'false',
+                                            'allowScriptAccess','sameDomain',
+                                            'movie', 'https://vlt-concepts.s3.amazonaws.com/fpi/textchat3',
+                                            'salign', ''
+                                            ); //end AC code
+                                    }
+                                </script>
+                                <noscript>
+                                    <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=9,0,0,0" width="550" height="400" id="textchat" align="middle">
+                                    <param name="allowScriptAccess" value="sameDomain" />
+                                    <param name="allowFullScreen" value="false" />
+                                    <param name="movie" value="https://vlt-concepts.s3.amazonaws.com/fpi/textchat3.swf" /><param name="quality" value="high" /><param name="bgcolor" value="#ffffff" /> <embed src="textchat3.swf" quality="high" bgcolor="#ffffff" width="550" height="400" name="textchat" align="middle" allowScriptAccess="sameDomain" allowFullScreen="false" type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />
+                                    </object>
+                                </noscript>
+                           </td>
+                          </tr>
+                   </table> 
+                   </center>                
+      
+        </apex:pageBlockSection>
+         <apex:pageBlockSection rendered="{!IF(ISBLANK($CurrentPage.parameters.id) || Video_Access_Token__c.Token_Start__c >= NOW() || Video_Access_Token__c.Token_Expiration__c < NOW(), true, false)}" title="Access Token Expired">
+             <apex:outputPanel >
+                Sorry, this token has expired. Please contact Food Perspectives for a new one.
+            </apex:outputPanel>
+        </apex:pageBlockSection>          
+    </apex:pageBlock>
+    
+    <p>
+    This website is optimized for Internet Explorer 9, Google Chrome, Firefox and Safari browsers latest versions. To get the best possible experience using our website we recommend that you upgrade your browser to the most recent version.
+    </p>
+</apex:page>

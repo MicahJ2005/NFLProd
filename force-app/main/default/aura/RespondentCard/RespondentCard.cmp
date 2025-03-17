@@ -1,0 +1,285 @@
+<aura:component implements="flexipage:availableForAllPageTypes,flexipage:availableForRecordHome" access="global" controller="HostToolLightning">
+	<!-- <aura:handler name="init" value="{!this}" action="{!c.doInit}"/> -->
+	<aura:handler name="change" value="{!v.Respondent}" action="{!c.doInit}"/>
+	<!-- <aura:handler name="change" value="{!v.message}" action="{!c.clearMessage}"/> -->
+	<aura:attribute name="Respondent" type="HostToolLightning.hClsRespondent"/>
+	<aura:attribute name="Pair" type="String"/>
+	<aura:attribute name="Session" type="Session__c"/>
+	<aura:attribute name="MasterTestId" type="String"/>
+	<aura:attribute name="TestRespondentDOTCheck" type="Test_Respondent__c[]"/>
+	<aura:attribute name="TestRespondentOtherTest" type="Test_Respondent__c[]"/>
+	<aura:attribute name="TestStatus" type="String[]"/>
+	<aura:attribute name="tStatus" type="String"/>
+	<aura:attribute name="rNumber" type="String" default=""/>
+	<aura:attribute name="message" type="String"/>
+	<aura:attribute name="lstQuota" type="HostToolLightning.hClsQuota[]"/>
+	<aura:attribute name="rComm" type="String"/>
+	<aura:attribute name="trComm" type="String"/>
+	<aura:attribute name="PeelOffs" type="Session__c[]"/>
+	<aura:attribute name="TestRespondentChild" type="Test_Respondent__c[]"/>
+
+	<div class="slds-align--absolute-center">
+		<p style="font-size:24px"><b><aura:unescapedHtml value="{!v.message}"/></b></p>
+	</div>
+	<div aura:id="mySpinner" class="slds-hide">
+		<div class="slds-spinner_container">
+			<div class="slds-spinner--brand slds-spinner slds-spinner--large" role="alert">
+				<span class="slds-assistive-text">Loading</span>
+				<div class="slds-spinner__dot-a"></div>
+				<div class="slds-spinner__dot-b"></div>
+			</div>
+		</div>
+	</div>
+	<div id="RespondentCardAll" class="slds slds-theme--default slds-grid" width="320px">
+		<div class="slds-col--padded slds-size--1-of-8 slds-p-around--small">
+			<div class="slds-col--padded slds-p-bottom--large slds-text-align--center">
+				Check-in<br />
+				<span class="slds-icon_container slds-icon-action-approval slds-icon_container--circle" onclick="{!c.checkin}" name="done">
+					<lightning:icon iconName="action:approval" size="small" alternativeText="Done Checking In"/>
+				</span>
+			</div>
+			<div class="slds-col--padded slds-p-bottom--large slds-text-align--center">
+				P/O<br />
+				<span class="slds-icon_container slds-icon-action-record slds-icon_container--circle" onclick="{!c.openPOModal}" name="done">
+					<lightning:icon iconName="action:record" size="small" alternativeText="Peel-off"/>
+				</span>
+			</div>
+			<div class="slds-col--padded slds-p-bottom--large slds-text-align--center">
+				Notify CS of Allergy<br />
+				<span class="slds-icon_container slds-icon-action-priority slds-icon_container--circle" onclick="{!c.notifyCSAllergy}" name="done">
+					<lightning:icon iconName="action:priority" size="small" alternativeText="Notify CS of Allergy"/>
+				</span>
+			</div>
+			<div class="slds-col--padded slds-p-bottom--large slds-text-align--center">
+				Notify CS of Bad Behavior<br />
+				<span class="slds-icon_container slds-icon-action-priority slds-icon_container--circle" onclick="{!c.notifyCSBadBehavior}" name="done">
+					<lightning:icon iconName="action:priority" size="small" alternativeText="Notify CS of Bad Behavior"/>
+				</span>
+			</div>
+			<div class="slds-col--padded slds-p-bottom--large slds-text-align--center">
+				Assign DOT/PSA Check<br />
+				<span class="slds-icon_container slds-icon-action-update slds-icon_container--circle" onclick="{!c.openDotModal}" name="done">
+					<lightning:icon iconName="action:update" size="small" alternativeText="DOT Check"/>
+				</span>
+			</div>
+		</div>
+		<div class="slds-col--padded slds-size--4-of-8 slds-p-around--small">
+			<div id="ProfieSection" class="slds-col--padded slds-size--6-of-6 slds-p-bottom--large">
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<div class="slds-text-align--center">
+						<p style="font-size:18px"><b>Check-in Information</b></p>
+					</div>
+					<b>Respondent Number: </b>
+					<ui:inputText value="{!v.rNumber}" maxlength="6"/>
+					<br/>
+					<b>Tested Status: </b>
+					<ui:inputSelect value="{!v.tStatus}">
+		            	<aura:iteration items="{!v.TestStatus}" var="ts">
+		                    	<ui:inputSelectOption text="{!ts}" label="{!ts}"/>
+		                </aura:iteration>
+		        	</ui:inputSelect>
+		        	<br/>
+					<b>Check Number: </b>{!v.Respondent.tr.Check_Number__c} 
+						<aura:if isTrue="{!v.Respondent.tr.Void__c}">
+							<span style="color:red;">  VOIDED</span>
+						</aura:if>
+				</div>
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<div class="slds-text-align--center">
+						<p style="font-size:18px"><b>Respondent Information</b></p>
+					</div>
+					<b>Age: </b>{!v.Respondent.tr.Respondent__r.Age__c}
+					<br/>
+					<b>Phone: </b>{!v.Respondent.tr.Respondent__r.Phone}
+					<br/>
+					<b>Address: </b>{!v.Respondent.tr.Street_Address__c}&nbsp;{!v.Respondent.tr.Street_Address_2__c}&nbsp; 
+							{!v.Respondent.tr.City__c},&nbsp;{!v.Respondent.tr.State__c}&nbsp;&nbsp;&nbsp;
+							{!v.Respondent.tr.Zip__c}
+					<br/>
+                    <b>W9 Requested: </b>{!v.Respondent.tr.Respondent__r.W9_Form_Requested__c}
+                    <br/>
+				</div>
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<div class="slds-text-align--center">
+						<p style="font-size:18px"><b>Current Session</b></p>
+					</div>
+					<b>Session start/end: </b><ui:outputDateTime value="{!v.Session.Session_Start__c}" format="hh:mm a"/> to <ui:outputDateTime value="{!v.Session.Session_End__c}" format="hh:mm a"/>
+					<br/>
+					<b>Type: </b>{!v.Session.Test_Type__c} 
+					<br/>
+					<b>Notes: </b>{!v.Session.Recruiting_Notes__c}
+					<br/>
+					<b>Beacon Instructions: </b>{!v.Session.Special_Instructions_for_Respondents__c}
+				</div>
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<div class="slds-text-align--center">
+						<p style="font-size:18px"><b>Communications</b></p>
+					</div>
+					<div>
+						<b>Respondent Communications: </b>{!v.rComm}<br/>
+						<b>Test Respondent Communications: </b>{!v.trComm}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slds-col--padded slds-size--3-of-8 slds-p-around--small">
+			<div class="slds-box sldx-box--small slds-theme--shade slds-hide" aura:id="ChildInfo">
+				<div class="slds-text-align--center">
+					<p style="font-size:18px"><b>Child Information</b></p>
+				</div>
+				<aura:iteration items="{!v.TestRespondentChild}" var="rp">
+					<b>Child Name: </b>{!rp.Respondent__r.Name} 
+					<br/>
+					<b>Respondent Number: </b>
+					<ui:inputText value="{!rp.Respondent_Number__c}" maxlength="6"/>
+					<br/>
+					<b>Tested Status: </b>
+					<ui:inputSelect value="{!rp.Tested_Status__c}">
+		            	<aura:iteration items="{!v.TestStatus}" var="ts">
+		            		<aura:if isTrue="{!ts == rp.Tested_Status__c}">
+		                    	<ui:inputSelectOption text="{!ts}" label="{!ts}" value="true"/>
+		                    	<aura:set attribute="else">
+		                    		<ui:inputSelectOption text="{!ts}" label="{!ts}" value="false"/>
+		                    	</aura:set>
+		                    </aura:if>
+		                </aura:iteration>
+		        	</ui:inputSelect>
+				</aura:iteration>
+			</div>
+			<div class="slds-box sldx-box--small slds-theme--shade">
+				<div class="slds-text-align--center">
+					<p style="font-size:18px"><b>Quota Information</b></p>
+				</div>
+				<aura:iteration items="{!v.lstQuota}" var="q">
+                    {!q.key} : {!q.value}<br />
+				</aura:iteration>
+			</div>
+			<div class="slds-text-align--center">
+				<p style="font-size:18px"><b>Upcoming Sessions</b></p>
+			</div>
+			<aura:iteration items="{!v.TestRespondentOtherTest}" var="otr">
+				<div class="slds-box sldx-box--small slds-theme--shade">
+					<b>Name: </b>{!otr.Session_Name__c}<br/>
+					<b>When: </b><ui:outputDateTime value="{!otr.Session_Date__c}" format="MM-dd-yy hh:mm a"/><br/>
+					<b>Type: </b>{!otr.Session_Type__c}
+				</div>
+			</aura:iteration>
+		</div>
+	</div>
+	<!-- Dot Check Modal -->
+	<div aura:id="DotCheckrModal" class="slds-hide">
+		<div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-scrollable" aria-labelledby="header43">
+			<div class="slds-modal__container">
+				<div class="slds-modal__header">
+					<div align="right">
+						<lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeDotModal}" alternativeText="Close window."/>
+					</div>
+					<h2 id="header43" class="slds-text-heading--medium">Dot Check Selection</h2>
+				</div>
+				<div class="slds-box sldx-box--small" style="height: 50%;">
+                    <div class="slds-grid slds-wrap slds-theme--shade">
+						<aura:iteration items="{!v.TestRespondentDOTCheck}" var="dc">
+                        	<div class="slds-size--1-of-6">
+	                        	<div class="slds-box slds-box--x-small slds-m-around--x-small" onclick="{!c.assignDotCheck}"  data-checkId="{!dc.Id}">
+									<div class="slds-tile slds-tile--board" style="slds-theme--shade; background-color: #d8dde6;">
+										<p class="slds-text-heading--medium"><a href="javascript:void(0);">
+											Check #: {!dc.Check_Number__c}<br/>
+	                            			Amount: {!dc.Check_Amount__c} <br/>
+										</a></p>
+									</div>
+								</div>
+							</div>
+                        </aura:iteration>
+                    </div>
+				</div>
+			</div>
+		</div>
+		<div class="slds-backdrop slds-backdrop--open"></div>
+	</div>
+	<!-- Peel-off Modal -->
+	<div aura:id="PeelOffModal" class="slds-hide">
+		<div class="slds-align--absolute-center">
+				<p style="font-size:24px"><b>{!v.message}</b></p>
+		</div>
+		<div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal--large" aria-labelledby="header43">
+			<div class="slds-modal__container">
+				<div class="slds-modal__header">
+					<div align="right">
+						<lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closePOModal}" alternativeText="Close window."/>
+					</div>
+					<h2 id="header43" class="slds-text-heading--large">Peel-off Selection</h2>
+				</div>
+				<div class="slds-modal__content">
+					<div class="slds-grid slds-wrap ">
+						<aura:iteration items="{!v.PeelOffs}" var="po">
+							<div class="slds-size--1-of-6 slds-theme--shade">
+                                <div class="slds-box slds-box--x-small slds-m-around--x-small" data-fldname="{!po.Id}" onclick="{!c.schedulePO}">
+									<div class="slds-tile slds-tile--board">
+										<p class="slds-text-heading--medium"><a href="javascript:void(0);">{!po.Name} </a></p>
+										<div class="slds-tile__detail slds-text-body--small">
+											<p class="slds-truncate">When: <ui:outputDateTime value="{!po.Session_Start__c}" format="hh:mm a"/> to <ui:outputDateTime value="{!po.Session_End__c}" format="hh:mm a"/></p>
+											<p class="slds-truncate">Where: {!po.Testing_Location__r.Name}</p>
+											<p class="slds-truncate">How Many: Goal={!po.Recruits_Per_Session__c}, Scheduled={!po.Scheduled_Respondents__c}</p>
+											<p class="slds-truncate">Notes: {!po.Recruiting_Notes__c}</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						</aura:iteration>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="slds-backdrop slds-backdrop--open"></div>
+	</div>
+	<!-- Allergy Modal -->
+	<div aura:id="AllergyModal" class="slds-hide">
+		<div class="slds-align--absolute-center">
+				<p style="font-size:24px"><b>{!v.message}</b></p>
+		</div>
+		<div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal--large" aria-labelledby="header43">
+			<div class="slds-modal__container">
+				<div class="slds-modal__header">
+					<div align="right">
+						<lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeAllergyModal}" alternativeText="Close window."/>
+					</div>
+					<h2 id="header43" class="slds-text-heading--large">Allergy Information</h2>
+				</div>
+				<div class="slds-modal__content slds-var-p-around_medium">
+						<lightning:recordEditForm recordId="{!v.Respondent.tr.Respondent__c}" objectApiName="Contact">
+							<lightning:inputField fieldName="Food_Allergies_c__c" />
+							<lightning:inputField fieldName="Food_Allergies_Other__c" class="slds-size_2-of-2" />
+							<lightning:button class="slds-m-around_x-small slds-float_right" onclick="{!c.closeAllergyModal}" variant="neutral" type="submit" name="cancel" label="Cancel" />
+							<lightning:button class="slds-m-around_x-small slds-float_right" onclick="{!c.saveAllergyCase}" variant="brand" type="submit" name="update" label="Save" />
+						</lightning:recordEditForm>
+				</div>
+			</div>
+		</div>
+		<div class="slds-backdrop slds-backdrop--open"></div>
+	</div>
+	<!-- Bad Behavior Modal -->
+	<div aura:id="BadBehaviorModal" class="slds-hide">
+		<div class="slds-align--absolute-center">
+				<p style="font-size:24px"><b>{!v.message}</b></p>
+		</div>
+		<div role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal--large" aria-labelledby="header43">
+			<div class="slds-modal__container">
+				<div class="slds-modal__header">
+					<div align="right">
+						<lightning:buttonIcon iconName="utility:close" variant="bare" onclick="{!c.closeBadBehaviorModal}" alternativeText="Close window."/>
+					</div>
+					<h2 id="header43" class="slds-text-heading--large">Bad Behavior Information</h2>
+				</div>
+				<div class="slds-modal__content">
+					<lightning:recordEditForm recordId="{!v.Respondent.tr.Respondent__c}" objectApiName="Contact">
+						<lightning:inputField fieldName="Bad_Behavior__c" />
+						<lightning:inputField fieldName="Other_Bad_Behavior_Please_Specify__c" class="slds-size_2-of-2" />
+						<lightning:button class="slds-m-around_x-small slds-float_right" onclick="{!c.closeBadBehavioryModal}" variant="neutral" type="submit" name="cancel" label="Cancel" />
+						<lightning:button class="slds-m-around_x-small slds-float_right" onclick="{!c.saveBadBehaviorCase}" variant="brand" type="submit" name="update" label="Save" />
+					</lightning:recordEditForm>
+				</div>
+			</div>
+		</div>
+		<div class="slds-backdrop slds-backdrop--open"></div>
+	</div>
+</aura:component>

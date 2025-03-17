@@ -1,0 +1,115 @@
+<!-- Commented out - no longer needed <apex:page standardController="Task_Queue__c" extensions="TestDayClientInfo_Controller" showHeader="false" sidebar="false" contentType="application/msWord#Test Day Client Info.doc">
+	<html xmlns:w="urn:schemas-microsoft-com:office:word">
+		<head>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+			<style media="print" type="text/css">	
+				p.MsoHeader, li.MsoHeader, div.MsoHeader{
+                    margin:0in;
+                    margin-top:.0001pt;
+                    mso-pagination:widow-orphan;
+                    tab-stops:center 3.0in right 6.0in;
+                }
+                p.MsoFooter, li.MsoFooter, div.MsoFooter{
+                    margin:0in;
+                    margin-bottom:.0001pt;
+                    mso-pagination:widow-orphan;
+                    tab-stops:center 3.0in right 6.0in;
+                }
+                .fpiTitle{
+                	color: #492e66;
+                }
+                @page Section1{
+                    size:8.5in 11.0in; 
+                    margin:0.5in 0.5in 0.5in 0.5in;
+                    mso-header-margin:0.5in;
+                    mso-header:h1;
+                    mso-footer:f1; 
+                    mso-footer-margin:0.5in;
+                    mso-paper-source:0;
+                }
+                div.Section1{
+                    page:Section1;
+                }
+                p{
+                    font-size: 11 px;
+                }
+/*                table#hrdftrtbl{
+                	margin: 0in 0in 0in 9in;
+                }*/
+			</style>
+		</head>
+		<body style="margin-top:0px; margin:0px;">
+			<div class="Section1">
+				<u><H3>{!tskQ.Project_Name__c}</H3></u><br/>
+                <b><u>Test Location:</u></b><br/>
+                {!tskQ.Location__r.Name}<br/>
+                {!tskQ.Location__r.Testing_Location_Street__c}<br/>
+                {!tskQ.Location__r.Testing_Location_City__c}, {!tskQ.Location__r.Testing_Location_State__c} {!tskQ.Location__r.Testing_Location_Zip_Postal_Code__c}<br/>
+                <br/>
+                Test Site Phone Number: {!tskQ.Location__r.Phone}<br/>
+                <b><u>Test Schedule:</u></b><br/>
+                <table border="1" width="100%">
+					<tr >
+						<th></th>
+						<th><b>CLT ({!strTime} minutes)<br/> N={!tskQ.Master_Test__r.Total_Number_of_Respondents__c}</b></th>
+						<th></th>
+					</tr>
+					<apex:repeat var="p" value="{!lstHcls}">
+						<tr>
+							<td colspan="3" bgcolor="#b5b6b7">
+								{!p.dayName}
+							</td>
+						</tr>
+						<apex:repeat var="s" value="{!p.lstSes}">
+							<tr>
+								<td width="33%">
+									{!s.sessionName}
+								</td>
+								<td width="33%" align="center">
+									{!s.sessionTime}
+								</td>
+								<td width="33%">
+								</td>
+							</tr>
+						</apex:repeat>
+					</apex:repeat>
+				</table><br/>
+				<b><u>Test Site Lead Contact:</u></b><br/>
+				{!testlead.MasterLabel}<br/>
+				{!testlead.Phone__c}<br/>
+				{!testlead.Email__c}<br/>
+				
+				{!tskQ.Location__r.Driving_Directions_and_Hotel_Information__c}
+
+				<table id='hrdftrtbl' border='1' cellspacing='0' cellpadding='0'>
+                    <tr>
+                        <td>
+                            <!--Header-
+                            <div style='mso-element:header' id="h1" >
+                                <p class="MsoHeader">
+                                    <table border="1" width="100%">
+                                        <tr>
+                                            <td>
+                                                <img src="http://www.fpitesters.com/media/image/1/emailheader_20170811.jpg" style="width: 75%" />
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <!--Footer-
+                            <div style='mso-element:footer' id="f1">
+                                <p class="MsoFooter">
+                                    <img src="http://www.fpitesters.com/media/image/1/emailfooter_20170811.jpg" style="width: 75%" />
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>              
+		</body>
+	</html>
+</apex:page>--><apex:page ></apex:page>

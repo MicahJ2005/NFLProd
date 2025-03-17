@@ -1,0 +1,7 @@
+<apex:page showHeader="false" sidebar="false">
+
+<div style="text-align: center;">
+	<input type="button" name="btnQuickTask" value="Log a Touch Point" class="btn" style="width: 150px; height: 20px;" onclick="window.location='/apex/QuickTask'" />
+</div>
+	
+</apex:page>

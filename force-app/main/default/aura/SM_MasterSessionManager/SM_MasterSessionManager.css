@@ -1,0 +1,103 @@
+.THIS {
+}
+
+.THIS .smTitles{
+    font-weight: 900;
+    font-size: 22px;
+}
+
+.THIS .slds-modal__container90{
+       max-width: 90rem !important;
+       width:90% !important;
+}
+
+.THIS .row-full{
+    width: 100vw;
+    position: relative;
+    margin-left: -50vw;
+    height: 100px;
+    margin-top: 100px;
+    left: 50%;
+}
+
+.THIS .slds-scrollable_x {
+    overflow-y:visible !important;
+    overflow-x:visible !important;
+}
+
+.THIS .slds-scrollable_y {
+    overflow-y:visible !important;
+    overflow-x:visible !important;
+}
+
+/* The snackbar - position it at the bottom and in the middle of the screen */
+
+.THIS .snackbar {
+    /* visibility: hidden;  Hidden by default. Visible on click */
+    min-width: 250px; /* Set a default minimum width */
+    margin-left: -125px; /* Divide value of min-width by 2 */
+    background-color: #ff6d6d; /* Black background color */
+    color: #fff; /* White text color */
+    text-align: center; /* Centered text */
+    border-radius: 2px; /* Rounded borders */
+    padding: 16px; /* Padding */
+    position: fixed; /* Sit on top of the screen */
+    z-index: 1; /* Add a z-index if needed */
+    left: 50%; /* Center the snackbar */
+    top: 30px; /* 30px from the bottom */
+}
+
+.THIS .snackbar.goodToast {
+    background-color: #34ba34 !important;
+}
+
+.THIS .bulkModal{
+    max-height: 30rem;
+}
+
+/* Show the snackbar when clicking on a button (class added with JavaScript) 
+.THIS .snackbar.show {
+    visibility: visible !important; /* Show the snackbar 
+
+ Add animation: Take 0.5 seconds to fade in and out the snackbar. 
+However, delay the fade out process for 2.5 seconds 
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+ Animations to fade the snackbar in and out
+.THIS @-webkit-keyframes fadein {
+    from {bottom: 0; opacity: 0;} 
+    to {bottom: 30px; opacity: 1;}
+}
+
+.THIS @keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+.THIS @-webkit-keyframes fadeout {
+    from {bottom: 30px; opacity: 1;} 
+    to {bottom: 0; opacity: 0;}
+} 
+
+.THIS @keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 0; opacity: 0;}
+} */
+
+.THIS .slds-truncate button{
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.THIS .data-table-button button{
+    min-height: 30px;
+}
+
+/** request to make the textarea fields bigger */
+.THIS .slds-textarea {
+    min-height: 150px !important;
+}

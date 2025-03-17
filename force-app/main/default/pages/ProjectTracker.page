@@ -1,0 +1,56 @@
+<!-- Commented out - no longer needed <apex:page controller="ProjectTrackerController" lightningStylesheets="true" >
+<style>
+ .box {
+    /**float: left;*/
+    width: 20px;
+    height: 20px;
+    margin: 5px;
+    border: 1px solid rgba(0, 0, 0, .2);
+  }
+  
+  .green {
+    background: #99DE97;
+  }
+  
+  .grey {
+    background: #C4C4C4;
+  }
+  
+  .red {
+    background: #ED6D6D;
+  }
+
+  .yellow {
+      background: #FFFEAC;
+  }
+</style>
+<br/>   
+<apex:form >
+    Filter by Opportunity Owner:<br/><apex:selectList value="{!selectedOppOwners}" multiselect="true" size="5">
+        <apex:selectOptions value="{!owners}" />
+    </apex:selectList>
+    <br/><br/>
+<apex:commandButton action="{!doFilter}" value="Filter" rerender="tableWrapper, tableComponent" />
+<apex:commandButton action="{!showAll}" value="Show All" rerender="tableWrapper, tableComponent" />
+<apex:commandButton action="{!export}" value="Export to XLS" />
+<br/><br/>
+    <table>
+        <tr>
+            <td><div class="box red"></div></td>
+            <td>Overdue / Target Date has passed &nbsp;&nbsp;</td>
+            <td><div class="box yellow"></div></td>
+            <td>Upcoming / Target Date next 7 days &nbsp;&nbsp;</td>
+            <td><div class="box green"></div></td>
+            <td>Completed &nbsp;&nbsp;</td>
+            <td><div class="box grey"></div></td>
+            <td>Canceled &nbsp;&nbsp;</td>
+        </tr>
+    </table>
+</apex:form>
+<br/>
+<apex:outputPanel id="tableWrapper">
+    <apex:outputPanel rendered="{!showTable}">
+        <c:ProjectTracker_Table id="tableComponent" />
+    </apex:outputPanel>
+</apex:outputPanel>   
+</apex:page>--><apex:page ></apex:page>

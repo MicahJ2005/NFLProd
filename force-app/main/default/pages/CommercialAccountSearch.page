@@ -1,0 +1,116 @@
+<apex:page > <!--controller="CommercialAccountSearchController" tabStyle="Account" action="{!logInToDrug}"> -->
+<!-- 2022 0707 sophia Murphy DCS - This page is no longer needed -->
+	<!-- 
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/redmond/jquery-ui-1.10.3.custom.min.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/tablesorter.css')}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+
+	<script>
+		j$ = jQuery.noConflict();
+
+		j$(document).ready(function() {
+
+	        j$( "#dialog-modal" ).dialog({
+	          autoOpen: false,
+	          height: 150,
+	          width: 400,
+	          modal: true,
+	          resizable: false,
+	          draggable: false
+	        });
+
+	    });
+
+		function statusShow() {
+		  j$( "#dialog-modal" ).dialog( "open" );
+		}
+
+		function statusHide() {
+		  j$( "#dialog-modal" ).dialog( "close" );      
+		}
+
+
+	</script>
+	
+<apex:sectionHeader title="Covance Food Solutions" subtitle="CFS Search and Retrieve" />
+
+<apex:form >
+<apex:actionStatus id="asShowInterstitial" onstart="statusShow();" onstop="statusHide();" />
+
+<apex:pageBlock id="pbMain">
+
+	<apex:pageMessage summary="Enter the Customer Name you wish to search Covance Commercial for, and then press *Add to CFS* to create that Customer in CFS.  If the Customer you are  searching for does not appear, try changing your search criteria or contact the Data Steward.  The search will place wildcards on each side of your search criteria.  Only the first 15 results will be returned." 
+				severity="info" 
+           		strength="3" />
+
+	<apex:pageBlockSection id="pbsHeader" columns="2">
+		<apex:pageBlockSectionItem >
+			<apex:outputText value="Enter Customer Name to Search" />
+			<apex:inputText value="{!strAccountName}" />
+		</apex:pageBlockSectionItem>
+		<apex:pageBlockSectionItem >
+			<apex:commandButton value="Search" action="{!searchCovanceCommercial}" rerender="pbMain" status="asShowInterstitial" />
+		</apex:pageBlockSectionItem>
+	</apex:pageBlockSection>
+	<apex:pageBlockSection id="pbsMain" columns="1">
+		<apex:pageMessages />
+
+		<apex:tabPanel switchType="ajax" value="{!strSelectedTab}" id="tpMain">
+			<apex:tab label="Accounts and Contacts" name="account" id="account">
+				
+				<apex:pageBlockTable value="{!lstAccounts}" var="acct">
+					<apex:column headerValue="Action">
+						<apex:commandButton value="Import" action="{!addAccountToCFS}" rerender="pbMain" status="asShowInterstitial">
+							<apex:param name="strVerified" value="{!acct.RecordType.Name}" assignTo="{!strVerified}" />
+							<apex:param name="idAccountToAdd" value="{!acct.Id}" assignTo="{!idAccountToAdd}" />
+						</apex:commandButton>
+					</apex:column>
+					<apex:column value="{!acct.Name}" />
+					<apex:column value="{!acct.RecordType.Name}" />
+					<apex:column value="{!acct.PeopleSoft_ID__c}" />
+					<apex:column value="{!acct.BillingCity}" />
+					<apex:column value="{!acct.BillingState}" />
+					<apex:column headerValue="Action">
+						<apex:commandButton value="Get Opportunities" action="{!searchOpps}" rerender="pbMain" status="asShowInterstitial">
+							<apex:param name="strVerified" value="{!acct.RecordType.Name}" assignTo="{!strVerified}" />
+							<apex:param name="idAccountToAdd" value="{!acct.Id}" assignTo="{!idAccountToAdd}" />
+						</apex:commandButton>
+					</apex:column>
+				</apex:pageBlockTable>
+				<br />
+
+			</apex:tab>
+			<apex:tab label="Opportunities" name="opportunity" id="opportunity">
+				
+				<apex:pageBlockTable value="{!lstOpps}" var="opp">
+					<apex:column headerValue="Action">
+						<apex:commandButton value="Import" action="{!addOppToCFS}" rerender="pbMain" status="asShowInterstitial">
+							<apex:param name="idOppToAdd" value="{!opp.Id}" assignTo="{!idOppToAdd}" />
+							<apex:param name="idAccountToAdd" value="{!opp.AccountId}" assignTo="{!idAccountToAdd}" />
+							<apex:param name="strVerified" value="{!opp.Account.RecordType.Name}" assignTo="{!strVerified}" />
+						</apex:commandButton>
+					</apex:column>
+					<apex:column value="{!opp.Id}" />
+					<apex:column value="{!opp.Name}" />
+					<apex:column value="{!opp.StageName}" />
+					<apex:column value="{!opp.Amount}" />
+				</apex:pageBlockTable>
+
+			</apex:tab>
+		</apex:tabPanel>
+
+		
+	</apex:pageBlockSection>
+</apex:pageBlock>
+
+</apex:form>
+
+<div id="dialog-modal" title="Processing Request">
+    <p align="center">
+      Please wait while the system processes your request!
+    </p>
+  </div>
+-->
+</apex:page>

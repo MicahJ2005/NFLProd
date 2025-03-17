@@ -1,0 +1,44 @@
+<apex:page standardController="Session__c" extensions="SessionCloneController" showHeader="true" sidebar="true" title="Clone Session">
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-1.8.0.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/js/jquery-ui-1.8.23.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jQueryDCS,'/tablesorter/jquery.tablesorter.min.js')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jQueryDCS,'/css/ui-lightness/jquery-ui-1.8.13.custom.css')}" />
+
+	<script>
+	    j$ = jQuery.noConflict();
+	    j$(document).ready(function () {
+	    	j$("#chkCheckAll").click(function () {
+				j$(".checkBoxInclude").attr('checked', this.checked);
+	        });
+	    });
+    </script>
+
+<apex:form id="frmMain">
+	<apex:sectionHeader title="Session" subtitle="Clone Session and Respondents" />
+	<apex:pageMessages id="pmMain" />
+	<apex:pageBlock title="Session Information">
+		<apex:pageBlockButtons location="top">
+			<apex:commandButton id="btnSave" value="Clone Session" action="{!cloneSession}" rerender="pbsRespondents" />
+			<apex:commandButton id="btnCancel" value="Cancel" action="{!cancel}" />
+		</apex:pageBlockButtons>
+		<apex:pageBlockSection id="pbsSession" columns="2">
+			<apex:repeat value="{!$ObjectType.Session__c.FieldSets.Wizard}" var="fs">
+                <apex:inputfield value="{!Session__c[fs]}" />
+            </apex:repeat>
+		</apex:pageBlockSection>
+		<apex:pageBlockSection id="pbsRespondents" columns="1">
+			<input type="checkbox" id="chkCheckAll" />&nbsp;Check / Uncheck All<br />
+			<apex:pageBlockTable id="pbtRespondents" value="{!lstRespondents}" var="r">
+				<apex:column headerValue="Include?" style="width: 50px;">
+					<apex:inputCheckbox styleClass="checkBoxInclude" value="{!r.bolChecked}" />
+				</apex:column>
+				<apex:column headerValue="Respondent Name">
+					<apex:inputField value="{!r.trContact.Respondent__r.Name}" />
+				</apex:column>
+				<apex:column value="{!r.trContact.Respondent__r.PID__c}" />
+				<apex:column value="{!r.trContact.Respondent__r.Birthdate}" />
+			</apex:pageBlockTable>
+		</apex:pageBlockSection>
+	</apex:pageBlock>
+</apex:form>
+</apex:page>
